@@ -6,8 +6,6 @@ All rights reserved.
 @author: neilswainston
 '''
 # pylint: disable=invalid-name
-# pylint: disable=protected-access
-# pylint: disable=too-few-public-methods
 import os.path
 
 from opentrons import simulate
