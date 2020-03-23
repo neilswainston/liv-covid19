@@ -84,12 +84,17 @@ def _add_operations(protocol, pipette, src_tip_racks, reag_plt):
     '''Add operations.'''
 
     # Transfer reagents:
+    pipette.pick_up_tip()
+
     for plt_idx in range(_SRC_PLATES['count']):
         dst_plt = _get_obj(protocol, 'smpl_dst_%i' % (plt_idx + 1))
         _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
 
         for dst_col in dst_plt.columns():
-            pipette.distribute(8.0, reag_plt[reag_well], dst_col)
+            pipette.distribute(8.0, reag_plt[reag_well], dst_col,
+                               new_tip='never', touch_tip=True)
+
+    pipette.drop_tip()
 
     # Transfer RNA samples:
     pipette.starting_tip = src_tip_racks[0]['A1']
@@ -98,7 +103,7 @@ def _add_operations(protocol, pipette, src_tip_racks, reag_plt):
         src_plt = _get_obj(protocol, 'smpl_src_%i' % (plt_idx + 1))
 
         for src_col, dst_col in zip(src_plt.columns(), dst_plt.columns()):
-            pipette.transfer(5.0, src_col, dst_col)
+            pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
 
 
 def _get_plate_well(reag_plt, reagent):
