@@ -44,7 +44,7 @@ def run(protocol):
 
     # Add pipette:
     pipette = protocol.load_instrument(
-        'p50_multi', 'left', tip_racks=list([reag_tip_rack] + src_tip_racks))
+        'p10_multi', 'right', tip_racks=list([reag_tip_rack] + src_tip_racks))
 
     # Setup plates:
     reag_plt = _add_plates(protocol)
@@ -82,30 +82,16 @@ def _add_plates(protocol):
     return reag_plt
 
 
-def _add_operations(protocol, pipette, src_tip_racks, reag_plt):
+def _add_operations(protocol, pipette, _, reag_plt):
     '''Add operations.'''
 
     # Transfer reagents:
-    pipette.pick_up_tip()
-
     for plt_idx in range(_SRC_PLATES['count']):
         dst_plt = _get_obj(protocol, 'smpl_dst_%i' % (plt_idx + 1))
-        _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
+        _, reag_well = _get_plate_well(reag_plt, 'sequenase_mix_2')
 
         for dst_col in dst_plt.columns():
-            pipette.distribute(8.0, reag_plt[reag_well], dst_col,
-                               new_tip='never', touch_tip=True)
-
-    pipette.drop_tip()
-
-    # Transfer RNA samples:
-    pipette.starting_tip = src_tip_racks[0]['A1']
-
-    for plt_idx in range(_SRC_PLATES['count']):
-        src_plt = _get_obj(protocol, 'smpl_src_%i' % (plt_idx + 1))
-
-        for src_col, dst_col in zip(src_plt.columns(), dst_plt.columns()):
-            pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
+            pipette.distribute(0.6, reag_plt[reag_well], dst_col)
 
 
 def _get_plate_well(reag_plt, reagent):

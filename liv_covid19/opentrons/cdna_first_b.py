@@ -20,7 +20,9 @@ _TIP_RACK_TYPE = 'opentrons_96_filtertiprack_20ul'
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
     'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2'}
+                   'rt_reaction_mix': 'A2',
+                   'sequenase_mix_1': 'A3',
+                   'sequenase_mix_2': 'A4'}
 }
 
 _SRC_PLATES = {
