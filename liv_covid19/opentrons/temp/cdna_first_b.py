@@ -12,7 +12,7 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.0',
+metadata = {'apiLevel': '2.1',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
             'description': 'simple'}
 
@@ -38,48 +38,25 @@ _DST_PLATES = {
 def run(protocol):
     '''Run protocol.'''
     # Add temp deck:
-    temp_mod = protocol.load_module('Temperature Module', 7)
+    temp_mod = protocol.load_module('Temperature Module', 9)
     temp_mod.set_temperature(23)
 
     # Setup tip racks:
-    reag_tip_rack, src_tip_rack = _add_tip_racks(protocol)
+    reag_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 11)
 
     # Add pipette:
     pipette = protocol.load_instrument(
-        'p50_multi', 'left', tip_racks=[reag_tip_rack, src_tip_rack])
+        'p50_multi', 'left', tip_racks=[reag_tip_rack])
 
     # Setup plates:
-    reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
+    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 8)
+    dst_plt = temp_mod.load_labware(_DST_PLATES['type'], 'dst_plt')
 
     # Add operations:
-    _add_operations(protocol, temp_mod, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt)
+    _add_operations(protocol, temp_mod, pipette, reag_plt, dst_plt)
 
 
-def _add_tip_racks(protocol):
-    '''Add tip racks.'''
-    # Add source and destination tip-rack:
-    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 1)
-
-    # Add reagent tip-rack:
-    reag_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 10)
-
-    return reag_tip_rack, src_tip_rack
-
-
-def _add_plates(protocol, temp_deck):
-    '''Add plates.'''
-    # Add reagent plate:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 11)
-
-    # Add source and destination plates:
-    src_plt = protocol.load_labware(_SRC_PLATES['type'], 4, 'src_plt')
-    dst_plt = temp_deck.load_labware(_DST_PLATES['type'], 'dst_plt')
-
-    return reag_plt, src_plt, dst_plt
-
-
-def _add_operations(protocol, temp_mod, pipette, _, reag_plt, __, dst_plt):
+def _add_operations(protocol, temp_mod, pipette, reag_plt, dst_plt):
     '''Add operations.'''
 
     # Transfer reagents:
