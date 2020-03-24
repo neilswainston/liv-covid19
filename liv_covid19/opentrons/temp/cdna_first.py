@@ -42,29 +42,43 @@ def run(protocol):
     temp_mod.set_temperature(65)
 
     # Setup tip racks:
-    reag_tip_rack, src_tip_rack = _add_tip_racks(protocol)
+    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 3)
+
+    reag_tip_racks = [protocol.load_labware(_TIP_RACK_TYPE, slot)
+                      for slot in [10, 11]]
 
     # Add pipette:
     pipette = protocol.load_instrument(
-        'p50_multi', 'left', tip_racks=[reag_tip_rack, src_tip_rack])
+        'p50_multi', 'left', tip_racks=reag_tip_racks + [src_tip_rack])
 
     # Setup plates:
     reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
 
-    # Add operations:
-    _add_operations(protocol, temp_mod, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt)
+    # Add primer mix:
+    _add_primer_mix(pipette, reag_plt, dst_plt)
 
+    # Add RNA samples:
+    pipette.starting_tip = src_tip_rack['A1']
+    _add_rna_samples(pipette, src_plt, dst_plt)
 
-def _add_tip_racks(protocol):
-    '''Add tip racks.'''
-    # Add source and destination tip-rack:
-    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 3)
+    # Incubate at 65C for 5 minute:
+    _incubate(protocol, temp_mod, 65, 5)
 
-    # Add reagent tip-rack:
-    reag_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 10)
+    # Incubate (on ice) / at min temp for 1 minute:
+    _incubate(protocol, temp_mod, 4, 1)
 
-    return reag_tip_rack, src_tip_rack
+    # Add RT reaction mix:
+    pipette.starting_tip = reag_tip_racks[0]['A2']
+    _add_rt_reaction_mix(pipette, reag_plt, dst_plt)
+
+    # Incubate at 23C for 10 minute:
+    _incubate(protocol, temp_mod, 23, 10)
+
+    # Incubate at 53C for 10 minute:
+    _incubate(protocol, temp_mod, 53, 10)
+
+    # Incubate at 80C for 10 minute:
+    _incubate(protocol, temp_mod, 80, 10)
 
 
 def _add_plates(protocol, temp_deck):
@@ -79,11 +93,14 @@ def _add_plates(protocol, temp_deck):
     return reag_plt, src_plt, dst_plt
 
 
-def _add_operations(protocol, _, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt):
-    '''Add operations.'''
+def _incubate(protocol, temp_mod, temp, minutes, seconds=0):
+    '''Incubate.'''
+    temp_mod.set_temperature(temp)
+    protocol.delay(minutes=minutes, seconds=seconds)
 
-    # Transfer reagents:
+
+def _add_primer_mix(pipette, reag_plt, dst_plt):
+    '''Add primer mix.'''
     pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
@@ -94,13 +111,21 @@ def _add_operations(protocol, _, pipette, src_tip_rack, reag_plt,
 
     pipette.drop_tip()
 
-    # Transfer RNA samples:
-    pipette.starting_tip = src_tip_rack['A1']
 
+def _add_rna_samples(pipette, src_plt, dst_plt):
+    '''Add RNA samples.'''
     for src_col, dst_col in zip(src_plt.columns(), dst_plt.columns()):
         pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
 
-    protocol.delay(minutes=5)
+
+def _add_rt_reaction_mix(pipette, reag_plt, dst_plt):
+    '''Add RT reaction mix.'''
+
+    # Transfer reagents:
+    _, reag_well = _get_plate_well(reag_plt, 'rt_reaction_mix')
+
+    for dst_col in dst_plt.columns():
+        pipette.distribute(7.0, reag_plt[reag_well], dst_col)
 
 
 def _get_plate_well(reag_plt, reagent):
