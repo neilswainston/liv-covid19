@@ -52,8 +52,8 @@ def run(protocol):
     reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
 
     # Add operations:
-    _add_operations(protocol, temp_mod, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt)
+    _add_operations(protocol, pipette, src_tip_rack, reag_plt, src_plt,
+                    dst_plt)
 
 
 def _add_tip_racks(protocol):
@@ -79,8 +79,8 @@ def _add_plates(protocol, temp_deck):
     return reag_plt, src_plt, dst_plt
 
 
-def _add_operations(protocol, temp_mod, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt):
+def _add_operations(protocol, pipette, src_tip_rack, reag_plt, src_plt,
+                    dst_plt):
     '''Add operations.'''
 
     # Transfer reagents:
