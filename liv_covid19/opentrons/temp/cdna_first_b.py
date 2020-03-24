@@ -39,7 +39,7 @@ def run(protocol):
     '''Run protocol.'''
     # Add temp deck:
     temp_mod = protocol.load_module('Temperature Module', 7)
-    temp_mod.set_temperature(65)
+    temp_mod.set_temperature(23)
 
     # Setup tip racks:
     reag_tip_rack, src_tip_rack = _add_tip_racks(protocol)
@@ -79,28 +79,20 @@ def _add_plates(protocol, temp_deck):
     return reag_plt, src_plt, dst_plt
 
 
-def _add_operations(protocol, _, pipette, src_tip_rack, reag_plt,
-                    src_plt, dst_plt):
+def _add_operations(protocol, temp_mod, pipette, _, reag_plt, __, dst_plt):
     '''Add operations.'''
 
     # Transfer reagents:
-    pipette.pick_up_tip()
-
-    _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
+    _, reag_well = _get_plate_well(reag_plt, 'rt_reaction_mix')
 
     for dst_col in dst_plt.columns():
-        pipette.distribute(8.0, reag_plt[reag_well], dst_col,
-                           new_tip='never', touch_tip=True)
+        pipette.distribute(7.0, reag_plt[reag_well], dst_col)
 
-    pipette.drop_tip()
-
-    # Transfer RNA samples:
-    pipette.starting_tip = src_tip_rack['A1']
-
-    for src_col, dst_col in zip(src_plt.columns(), dst_plt.columns()):
-        pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
-
-    protocol.delay(minutes=5)
+    protocol.delay(minutes=10)
+    temp_mod.set_temperature(53)
+    protocol.delay(minutes=10)
+    temp_mod.set_temperature(80)
+    protocol.delay(minutes=10)
 
 
 def _get_plate_well(reag_plt, reagent):
