@@ -55,9 +55,11 @@ def run(protocol):
     reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
 
     # Add primer mix:
+    protocol.comment('\nAdd primer mix')
     _add_primer_mix(pipette, reag_plt, dst_plt)
 
     # Add RNA samples:
+    protocol.comment('\nAdd RNA samples')
     pipette.starting_tip = src_tip_rack['A1']
     _add_rna_samples(pipette, src_plt, dst_plt)
 
@@ -68,8 +70,9 @@ def run(protocol):
     _incubate(protocol, temp_mod, 4, 1)
 
     # Add RT reaction mix:
+    protocol.comment('\nAdd RT reaction mix')
     pipette.starting_tip = reag_tip_racks[0]['A2']
-    _add_rt_reaction_mix(pipette, reag_plt, dst_plt)
+    _add_reagent(pipette, reag_plt, dst_plt, 'rt_reaction_mix', 7.0)
 
     # Incubate at 23C for 10 minute:
     _incubate(protocol, temp_mod, 23, 10)
@@ -79,6 +82,20 @@ def run(protocol):
 
     # Incubate at 80C for 10 minute:
     _incubate(protocol, temp_mod, 80, 10)
+
+    # Add sequenase mix 1:
+    protocol.comment('\nAdd sequenase mix 1')
+    _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_1', 4.9)
+
+    # Incubate at 37C for 8 minute:
+    _incubate(protocol, temp_mod, 37, 8)
+
+    # Add sequenase mix 2:
+    protocol.comment('\nAdd sequenase mix 2')
+    _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
+
+    # Incubate at 37C for 8 minute:
+    _incubate(protocol, temp_mod, 37, 8)
 
 
 def _add_plates(protocol, temp_deck):
@@ -105,7 +122,7 @@ def _add_primer_mix(pipette, reag_plt, dst_plt):
 
     _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
 
-    for dst_col in dst_plt.columns():
+    for dst_col in dst_plt.columns()[:1]:
         pipette.distribute(8.0, reag_plt[reag_well], dst_col,
                            new_tip='never', touch_tip=True)
 
@@ -114,18 +131,18 @@ def _add_primer_mix(pipette, reag_plt, dst_plt):
 
 def _add_rna_samples(pipette, src_plt, dst_plt):
     '''Add RNA samples.'''
-    for src_col, dst_col in zip(src_plt.columns(), dst_plt.columns()):
+    for src_col, dst_col in zip(src_plt.columns()[:1], dst_plt.columns()[:1]):
         pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
 
 
-def _add_rt_reaction_mix(pipette, reag_plt, dst_plt):
-    '''Add RT reaction mix.'''
+def _add_reagent(pipette, reag_plt, dst_plt, reagent, vol):
+    '''Add reagent.'''
 
     # Transfer reagents:
-    _, reag_well = _get_plate_well(reag_plt, 'rt_reaction_mix')
+    _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    for dst_col in dst_plt.columns():
-        pipette.distribute(7.0, reag_plt[reag_well], dst_col)
+    for dst_col in dst_plt.columns()[:1]:
+        pipette.distribute(vol, reag_plt[reag_well], dst_col)
 
 
 def _get_plate_well(reag_plt, reagent):
