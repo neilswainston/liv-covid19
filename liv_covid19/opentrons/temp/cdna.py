@@ -16,7 +16,7 @@ metadata = {'apiLevel': '2.1',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
             'description': 'simple'}
 
-_TIP_RACK_TYPE = 'opentrons_96_filtertiprack_20ul'
+_TIP_RACK_TYPE = 'opentrons_96_filtertiprack_200ul'
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
@@ -38,14 +38,14 @@ _DST_PLATES = {
 def run(protocol):
     '''Run protocol.'''
     # Add temp deck:
-    temp_mod = protocol.load_module('Temperature Module', 9)
+    temp_mod = protocol.load_module('Temperature Module', 10)
     temp_mod.set_temperature(65)
 
     # Setup tip racks:
-    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 3)
+    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 4)
 
     reag_tip_racks = [protocol.load_labware(_TIP_RACK_TYPE, slot)
-                      for slot in [10, 11]]
+                      for slot in [8, 9]]
 
     # Add pipette:
     pipette = protocol.load_instrument(
@@ -101,10 +101,10 @@ def run(protocol):
 def _add_plates(protocol, temp_deck):
     '''Add plates.'''
     # Add reagent plate:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 8)
+    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 11)
 
     # Add source and destination plates:
-    src_plt = protocol.load_labware(_SRC_PLATES['type'], 6, 'src_plt')
+    src_plt = protocol.load_labware(_SRC_PLATES['type'], 7, 'src_plt')
     dst_plt = temp_deck.load_labware(_DST_PLATES['type'], 'dst_plt')
 
     return reag_plt, src_plt, dst_plt
