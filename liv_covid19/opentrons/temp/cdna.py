@@ -49,7 +49,7 @@ def run(protocol):
 
     # Add pipette:
     pipette = protocol.load_instrument(
-        'p50_multi', 'left', tip_racks=reag_tip_racks + [src_tip_rack])
+        'p50_multi', 'right', tip_racks=reag_tip_racks + [src_tip_rack])
 
     # Setup plates:
     reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
