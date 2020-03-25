@@ -31,7 +31,7 @@ _SRC_PLATES = {
 }
 
 _DST_PLATES = {
-    'type': '4ti_96_wellplate_350ul'
+    'type': '4ti_96_wellplate_200ul'
 }
 
 
