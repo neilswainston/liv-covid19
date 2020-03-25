@@ -122,9 +122,10 @@ def _add_primer_mix(pipette, reag_plt, dst_plt):
 
     _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
 
-    for dst_col in dst_plt.columns()[:1]:
-        pipette.distribute(8.0, reag_plt[reag_well], dst_col,
-                           new_tip='never', touch_tip=True)
+    pipette.distribute(8.0,
+                       reag_plt.wells_by_name()[reag_well],
+                       dst_plt.rows_by_name()['A'],
+                       new_tip='never', touch_tip=True)
 
     pipette.drop_tip()
 
