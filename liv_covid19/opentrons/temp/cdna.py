@@ -61,6 +61,9 @@ def _setup(protocol):
     thermo_mod.open_lid()
     thermo_mod.set_block_temperature(65)
 
+    temp_deck = protocol.load_module('tempdeck', 4)
+    temp_deck.set_temperature(4)
+
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
@@ -78,7 +81,7 @@ def _setup(protocol):
         'p50_multi', 'right', tip_racks=tip_racks_200)
 
     # Setup plates:
-    reag_plt, src_plt, dst_plt = _add_plates(protocol, thermo_mod)
+    reag_plt, src_plt, dst_plt = _add_plates(protocol, thermo_mod, temp_deck)
 
     return thermo_mod, p10_multi, p50_multi, reag_plt, src_plt, dst_plt
 
@@ -138,13 +141,13 @@ def _pcr(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
     _incubate(thermo_mod, 4, 1, lid_temp=4)
 
 
-def _add_plates(protocol, thermo_mod):
+def _add_plates(protocol, thermo_mod, temp_deck):
     '''Add plates.'''
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source and destination plates:
-    src_plt = protocol.load_labware(_SRC_PLATE['type'], 4, 'src_plt')
+    src_plt = temp_deck.load_labware(_SRC_PLATE['type'], 'src_plt')
     dst_plt = thermo_mod.load_labware(_DST_PLATE['type'], 'dst_plt')
 
     return reag_plt, src_plt, dst_plt
