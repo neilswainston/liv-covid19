@@ -26,7 +26,7 @@ _REAGENT_PLATE = {
 
 _SRC_PLATE = {
     'type': '4ti_96_wellplate_350ul',
-    'last': 'H1'
+    'last': 'H6'
 }
 
 _DST_PLATE = {
@@ -42,26 +42,31 @@ def run(protocol):
     thermo_mod.set_block_temperature(65)
 
     # Setup tip racks:
-    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 1)
+    tip_racks_10 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
+         for slot in [1, 3]]
 
-    reag_tip_racks = [protocol.load_labware(_TIP_RACK_TYPE, slot)
-                      for slot in [2, 3]]
+    tip_racks_200 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
+         for slot in [2]]
 
-    # Add pipette:
-    pipette = protocol.load_instrument(
-        'p50_multi', 'right', tip_racks=reag_tip_racks + [src_tip_rack])
+    # Add pipettes:
+    p10_multi = protocol.load_instrument(
+        'p10_multi', 'left', tip_racks=tip_racks_10)
+
+    p50_multi = protocol.load_instrument(
+        'p50_multi', 'right', tip_racks=tip_racks_200)
 
     # Setup plates:
     reag_plt, src_plt, dst_plt = _add_plates(protocol, thermo_mod)
 
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _add_primer_mix(pipette, reag_plt, dst_plt)
+    _add_primer_mix(p50_multi, reag_plt, dst_plt)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
-    pipette.starting_tip = src_tip_rack['A1']
-    _add_rna_samples(pipette, src_plt, dst_plt)
+    _add_rna_samples(p10_multi, src_plt, dst_plt)
 
     # Incubate at 65C for 5 minute:
     _incubate(thermo_mod, 65, 5)
@@ -71,8 +76,7 @@ def run(protocol):
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    pipette.starting_tip = reag_tip_racks[0]['A2']
-    _add_reagent(pipette, reag_plt, dst_plt, 'rt_reaction_mix', 7.0)
+    _add_reagent(p10_multi, reag_plt, dst_plt, 'rt_reaction_mix', 7.0)
 
     # Incubate at 23C for 10 minute:
     _incubate(thermo_mod, 23, 10)
@@ -85,7 +89,7 @@ def run(protocol):
 
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
-    # _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
+    # _add_reagent(p50_multi, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
 
     # PCR:
     protocol.comment('\nPerforming PCR')
@@ -111,30 +115,30 @@ def _incubate(thermo_mod, temp, minutes, seconds=0):
                                      hold_time_seconds=seconds)
 
 
-def _add_primer_mix(pipette, reag_plt, dst_plt):
+def _add_primer_mix(p50_multi, reag_plt, dst_plt):
     '''Add primer mix.'''
-    pipette.pick_up_tip()
+    p50_multi.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
 
     dest_cols = dst_plt.rows_by_name()['A']
     last_col = _get_last_col()
 
-    pipette.distribute(8.0,
-                       reag_plt.wells_by_name()[reag_well],
-                       dest_cols[:last_col],
-                       new_tip='never', touch_tip=True)
+    p50_multi.distribute(8.0,
+                         reag_plt.wells_by_name()[reag_well],
+                         dest_cols[:last_col],
+                         new_tip='never', touch_tip=True)
 
-    pipette.drop_tip()
+    p50_multi.drop_tip()
 
 
-def _add_rna_samples(pipette, src_plt, dst_plt):
+def _add_rna_samples(p10_multi, src_plt, dst_plt):
     '''Add RNA samples.'''
     last_col = _get_last_col()
 
     for src_col, dst_col in zip(src_plt.columns()[:last_col],
                                 dst_plt.columns()[:last_col]):
-        pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
+        p10_multi.transfer(5.0, src_col, dst_col, touch_tip=True)
 
 
 def _add_reagent(pipette, reag_plt, dst_plt, reagent, vol):
