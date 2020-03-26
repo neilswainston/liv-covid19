@@ -38,21 +38,22 @@ _DST_PLATES = {
 def run(protocol):
     '''Run protocol.'''
     # Add temp deck:
-    temp_mod = protocol.load_module('Temperature Module', 10)
-    temp_mod.set_temperature(65)
+    thermo_mod = protocol.load_module('thermocycler', 7)
+    thermo_mod.open_lid()
+    thermo_mod.set_block_temperature(65)
 
     # Setup tip racks:
-    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 4)
+    src_tip_rack = protocol.load_labware(_TIP_RACK_TYPE, 1)
 
     reag_tip_racks = [protocol.load_labware(_TIP_RACK_TYPE, slot)
-                      for slot in [8, 9]]
+                      for slot in [2, 3]]
 
     # Add pipette:
     pipette = protocol.load_instrument(
         'p50_multi', 'right', tip_racks=reag_tip_racks + [src_tip_rack])
 
     # Setup plates:
-    reag_plt, src_plt, dst_plt = _add_plates(protocol, temp_mod)
+    reag_plt, src_plt, dst_plt = _add_plates(protocol, thermo_mod)
 
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
@@ -64,10 +65,10 @@ def run(protocol):
     _add_rna_samples(pipette, src_plt, dst_plt)
 
     # Incubate at 65C for 5 minute:
-    _incubate(protocol, temp_mod, 65, 5)
+    _incubate(thermo_mod, 65, 5)
 
     # Incubate (on ice) / at min temp for 1 minute:
-    _incubate(protocol, temp_mod, 4, 1)
+    _incubate(thermo_mod, 4, 1)
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
@@ -75,45 +76,46 @@ def run(protocol):
     _add_reagent(pipette, reag_plt, dst_plt, 'rt_reaction_mix', 7.0)
 
     # Incubate at 23C for 10 minute:
-    _incubate(protocol, temp_mod, 23, 10)
+    _incubate(thermo_mod, 23, 10)
 
     # Incubate at 53C for 10 minute:
-    _incubate(protocol, temp_mod, 53, 10)
+    _incubate(thermo_mod, 53, 10)
 
     # Incubate at 80C for 10 minute:
-    _incubate(protocol, temp_mod, 80, 10)
+    _incubate(thermo_mod, 80, 10)
 
     # Add sequenase mix 1:
     protocol.comment('\nAdd sequenase mix 1')
     _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_1', 4.9)
 
     # Incubate at 37C for 8 minute:
-    _incubate(protocol, temp_mod, 37, 8)
+    _incubate(thermo_mod, 37, 8)
 
     # Add sequenase mix 2:
     protocol.comment('\nAdd sequenase mix 2')
     _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
 
     # Incubate at 37C for 8 minute:
-    _incubate(protocol, temp_mod, 37, 8)
+    _incubate(thermo_mod, 37, 8)
 
 
 def _add_plates(protocol, temp_deck):
     '''Add plates.'''
     # Add reagent plate:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 11)
+    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source and destination plates:
-    src_plt = protocol.load_labware(_SRC_PLATES['type'], 7, 'src_plt')
+    src_plt = protocol.load_labware(_SRC_PLATES['type'], 4, 'src_plt')
     dst_plt = temp_deck.load_labware(_DST_PLATES['type'], 'dst_plt')
 
     return reag_plt, src_plt, dst_plt
 
 
-def _incubate(protocol, temp_mod, temp, minutes, seconds=0):
+def _incubate(thermo_mod, temp, minutes, seconds=0):
     '''Incubate.'''
-    temp_mod.set_temperature(temp)
-    protocol.delay(minutes=minutes, seconds=seconds)
+    thermo_mod.set_block_temperature(temp,
+                                     hold_time_minutes=minutes,
+                                     hold_time_seconds=seconds)
 
 
 def _add_primer_mix(pipette, reag_plt, dst_plt):
