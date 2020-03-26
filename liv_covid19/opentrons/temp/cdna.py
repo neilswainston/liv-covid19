@@ -21,9 +21,7 @@ _TIP_RACK_TYPE = 'opentrons_96_filtertiprack_200ul'
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
     'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2',
-                   'sequenase_mix_1': 'A3',
-                   'sequenase_mix_2': 'A4'}
+                   'rt_reaction_mix': 'A2'}
 }
 
 _SRC_PLATE = {
@@ -84,20 +82,6 @@ def run(protocol):
 
     # Incubate at 80C for 10 minute:
     _incubate(thermo_mod, 80, 10)
-
-    # Add sequenase mix 1:
-    protocol.comment('\nAdd sequenase mix 1')
-    _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_1', 4.9)
-
-    # Incubate at 37C for 8 minute:
-    _incubate(thermo_mod, 37, 8)
-
-    # Add sequenase mix 2:
-    protocol.comment('\nAdd sequenase mix 2')
-    _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
-
-    # Incubate at 37C for 8 minute:
-    _incubate(thermo_mod, 37, 8)
 
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
