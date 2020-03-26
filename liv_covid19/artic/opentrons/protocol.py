@@ -59,7 +59,8 @@ def _setup(protocol):
     # Add temp deck:
     thermo_mod = protocol.load_module('thermocycler', 7)
     thermo_mod.open_lid()
-    thermo_mod.set_block_temperature(65)
+    thermo_mod.set_block_temperature(4)
+    thermo_mod.set_lid_temperature(105)
 
     temp_deck = protocol.load_module('tempdeck', 4)
     temp_deck.set_temperature(4)
@@ -123,7 +124,7 @@ def _cdna(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
     _incubate(thermo_mod, 70, 10, lid_temp=105)
 
     # Incubate at 4C for 1 minute:
-    _incubate(thermo_mod, 4, 1, lid_temp=4)
+    _incubate(thermo_mod, 4, 1, lid_temp=105)
     thermo_mod.open_lid()
 
 
