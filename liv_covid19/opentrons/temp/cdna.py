@@ -98,15 +98,23 @@ def run(protocol):
     # Incubate at 37C for 8 minute:
     _incubate(thermo_mod, 37, 8)
 
+    # Add PCR primer mix:
+    protocol.comment('\nAdd PCR primer mix')
+    # _add_reagent(pipette, reag_plt, dst_plt, 'sequenase_mix_2', 0.6)
 
-def _add_plates(protocol, temp_deck):
+    # PCR:
+    protocol.comment('\nPerforming PCR')
+    _do_pcr(thermo_mod)
+
+
+def _add_plates(protocol, thermo_mod):
     '''Add plates.'''
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source and destination plates:
     src_plt = protocol.load_labware(_SRC_PLATES['type'], 4, 'src_plt')
-    dst_plt = temp_deck.load_labware(_DST_PLATES['type'], 'dst_plt')
+    dst_plt = thermo_mod.load_labware(_DST_PLATES['type'], 'dst_plt')
 
     return reag_plt, src_plt, dst_plt
 
@@ -146,6 +154,24 @@ def _add_reagent(pipette, reag_plt, dst_plt, reagent, vol):
 
     for dst_col in dst_plt.columns()[:1]:
         pipette.distribute(vol, reag_plt[reag_well], dst_col)
+
+
+def _do_pcr(thermo_mod):
+    '''Do PCR.'''
+    thermo_mod.close_lid()
+    thermo_mod.set_lid_temperature(105)
+    thermo_mod.set_block_temperature(98, hold_time_seconds=30)
+
+    profile = [
+        {'temperature': 98, 'hold_time_seconds': 15},
+        {'temperature': 65, 'hold_time_seconds': 5}
+    ]
+
+    thermo_mod.execute_profile(steps=profile, repetitions=30,
+                               block_max_volume=25)
+
+    thermo_mod.deactivate()
+    thermo_mod.open_lid()
 
 
 def _get_plate_well(reag_plt, reagent):
