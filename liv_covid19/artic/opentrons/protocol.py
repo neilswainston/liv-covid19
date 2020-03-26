@@ -16,8 +16,6 @@ metadata = {'apiLevel': '2.1',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
             'description': 'simple'}
 
-_TIP_RACK_TYPE = 'opentrons_96_filtertiprack_200ul'
-
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
     'components': {'primer_mix': 'A1',
