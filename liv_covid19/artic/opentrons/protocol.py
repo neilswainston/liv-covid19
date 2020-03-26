@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SRC_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': 'H6'
+    'last': 'H2'
 }
 
 _DST_PLATE = {
@@ -80,8 +80,12 @@ def _setup(protocol):
     p50_multi = protocol.load_instrument(
         'p50_multi', 'right', tip_racks=tip_racks_200)
 
-    # Setup plates:
-    reag_plt, src_plt, dst_plt = _add_plates(protocol, thermo_mod, temp_deck)
+    # Add reagent plate:
+    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
+
+    # Add source and destination plates:
+    src_plt = temp_deck.load_labware(_SRC_PLATE['type'], 'src_plt')
+    dst_plt = thermo_mod.load_labware(_DST_PLATE['type'], 'dst_plt')
 
     return thermo_mod, p10_multi, p50_multi, reag_plt, src_plt, dst_plt
 
@@ -91,11 +95,12 @@ def _cdna(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 'primer_mix', 8.0)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, _get_last_col(),
+                        'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
-    _add_samples(p10_multi, src_plt, dst_plt, 5.0)
+    _add_samples(p10_multi, src_plt, dst_plt, 1, _get_last_col(), 5.0)
 
     # Incubate at 65C for 5 minute:
     thermo_mod.close_lid()
@@ -107,7 +112,8 @@ def _cdna(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p10_multi, reag_plt, dst_plt, 'rt_reaction_mix', 7.0)
+    _transfer_reagent(p10_multi, reag_plt, dst_plt, 1, _get_last_col(),
+                      'rt_reaction_mix', 7.0)
 
     # Incubate at 42C for 10 minute:
     thermo_mod.close_lid()
@@ -126,12 +132,18 @@ def _pcr(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
     '''Do PCR.'''
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
-    _distribute_reagent(p50_multi, reag_plt, dst_plt,
+
+    # Add Pool A:
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, _get_last_col(),
                         'primer_pool_a_mastermix', 22.5)
 
-    _add_samples(p10_multi, src_plt, dst_plt, 2.5)
+    # Add Pool B:
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 7, 7 + _get_last_col(),
+                        'primer_pool_b_mastermix', 22.5)
 
-    # TODO: add B pool...
+    # Add samples to each pool:
+    _add_samples(p10_multi, src_plt, dst_plt, 1, _get_last_col(), 2.5)
+    _add_samples(p10_multi, src_plt, dst_plt, 7, 7 + _get_last_col(), 2.5)
 
     # PCR:
     protocol.comment('\nPerforming PCR')
@@ -139,18 +151,6 @@ def _pcr(protocol, thermo_mod, p10_multi, p50_multi, reag_plt, src_plt,
 
     # Incubate at 4C for 1 minute:
     _incubate(thermo_mod, 4, 1, lid_temp=4)
-
-
-def _add_plates(protocol, thermo_mod, temp_deck):
-    '''Add plates.'''
-    # Add reagent plate:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
-
-    # Add source and destination plates:
-    src_plt = temp_deck.load_labware(_SRC_PLATE['type'], 'src_plt')
-    dst_plt = thermo_mod.load_labware(_DST_PLATE['type'], 'dst_plt')
-
-    return reag_plt, src_plt, dst_plt
 
 
 def _incubate(thermo_mod, block_temp, minutes, seconds=0, lid_temp=None):
@@ -163,38 +163,36 @@ def _incubate(thermo_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                      hold_time_seconds=seconds)
 
 
-def _add_samples(p10_multi, src_plt, dst_plt, vol):
+def _add_samples(pipette, src_plt, dst_plt, first_col, last_col, vol):
     '''Add samples.'''
-    last_col = _get_last_col()
-
-    for src_col, dst_col in zip(src_plt.columns()[:last_col],
-                                dst_plt.columns()[:last_col]):
-        p10_multi.transfer(vol, src_col, dst_col, mix_after=(1, 5.0))
+    for src_col, dst_col in zip(src_plt.columns()[first_col - 1:last_col],
+                                dst_plt.columns()[first_col - 1:last_col]):
+        pipette.transfer(vol, src_col, dst_col, mix_after=(1, 5.0))
 
 
-def _distribute_reagent(p50_multi, reag_plt, dst_plt, reagent, vol):
+def _distribute_reagent(pipette, reag_plt, dst_plt, first_col, last_col,
+                        reagent, vol):
     '''Distribute reagent.'''
-    p50_multi.pick_up_tip()
+    pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     dest_cols = dst_plt.rows_by_name()['A']
-    last_col = _get_last_col()
 
-    p50_multi.distribute(vol,
-                         reag_plt.wells_by_name()[reag_well],
-                         dest_cols[:last_col],
-                         new_tip='never')
+    pipette.distribute(vol,
+                       reag_plt.wells_by_name()[reag_well],
+                       dest_cols[first_col - 1:last_col],
+                       new_tip='never')
 
-    p50_multi.drop_tip()
+    pipette.drop_tip()
 
 
-def _transfer_reagent(pipette, reag_plt, dst_plt, reagent, vol):
+def _transfer_reagent(pipette, reag_plt, dst_plt, first_col, last_col,
+                      reagent, vol):
     '''Transfer reagent.'''
     _, reag_well = _get_plate_well(reag_plt, reagent)
-    last_col = _get_last_col()
 
-    for dst_col in dst_plt.columns()[:last_col]:
+    for dst_col in dst_plt.columns()[first_col - 1:last_col]:
         pipette.transfer(vol, reag_plt[reag_well], dst_col, mix_after=(1, vol))
 
 
