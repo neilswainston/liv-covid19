@@ -26,11 +26,12 @@ _REAGENT_PLATE = {
                    'sequenase_mix_2': 'A4'}
 }
 
-_SRC_PLATES = {
-    'type': '4ti_96_wellplate_350ul'
+_SRC_PLATE = {
+    'type': '4ti_96_wellplate_350ul',
+    'last': 'H1'
 }
 
-_DST_PLATES = {
+_DST_PLATE = {
     'type': '4titude_96_wellplate_200ul'
 }
 
@@ -113,8 +114,8 @@ def _add_plates(protocol, thermo_mod):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source and destination plates:
-    src_plt = protocol.load_labware(_SRC_PLATES['type'], 4, 'src_plt')
-    dst_plt = thermo_mod.load_labware(_DST_PLATES['type'], 'dst_plt')
+    src_plt = protocol.load_labware(_SRC_PLATE['type'], 4, 'src_plt')
+    dst_plt = thermo_mod.load_labware(_DST_PLATE['type'], 'dst_plt')
 
     return reag_plt, src_plt, dst_plt
 
@@ -132,9 +133,12 @@ def _add_primer_mix(pipette, reag_plt, dst_plt):
 
     _, reag_well = _get_plate_well(reag_plt, 'primer_mix')
 
+    dest_cols = dst_plt.rows_by_name()['A']
+    last_col = _get_last_col()
+
     pipette.distribute(8.0,
                        reag_plt.wells_by_name()[reag_well],
-                       dst_plt.rows_by_name()['A'],
+                       dest_cols[:last_col],
                        new_tip='never', touch_tip=True)
 
     pipette.drop_tip()
@@ -142,17 +146,19 @@ def _add_primer_mix(pipette, reag_plt, dst_plt):
 
 def _add_rna_samples(pipette, src_plt, dst_plt):
     '''Add RNA samples.'''
-    for src_col, dst_col in zip(src_plt.columns()[:1], dst_plt.columns()[:1]):
+    last_col = _get_last_col()
+
+    for src_col, dst_col in zip(src_plt.columns()[:last_col],
+                                dst_plt.columns()[:last_col]):
         pipette.transfer(5.0, src_col, dst_col, touch_tip=True)
 
 
 def _add_reagent(pipette, reag_plt, dst_plt, reagent, vol):
     '''Add reagent.'''
-
-    # Transfer reagents:
     _, reag_well = _get_plate_well(reag_plt, reagent)
+    last_col = _get_last_col()
 
-    for dst_col in dst_plt.columns()[:1]:
+    for dst_col in dst_plt.columns()[:last_col]:
         pipette.distribute(vol, reag_plt[reag_well], dst_col)
 
 
@@ -172,6 +178,11 @@ def _do_pcr(thermo_mod):
 
     thermo_mod.deactivate()
     thermo_mod.open_lid()
+
+
+def _get_last_col():
+    '''Get last sample column.'''
+    return int(_SRC_PLATE['last'][1])
 
 
 def _get_plate_well(reag_plt, reagent):
