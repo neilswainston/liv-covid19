@@ -51,8 +51,8 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    # _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
-    #         therm_plt, mag_plt)
+    _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
+             therm_plt, mag_plt)
 
 
 def _setup(protocol):
@@ -163,14 +163,11 @@ def _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
     # Combine Pool A and Pool B:
     protocol.comment('\nCombining Pools A and B')
 
-    first_col = 1
-    last_col = _get_num_cols()
-
-    for col_idx in range(first_col - 1, last_col):
+    for col_idx in range(_get_num_cols()):
         p50_multi.consolidate(
             25,
-            src_plt.columns()[col_idx],
-            [dst_plt.columns()[idx] for idx in [col_idx, col_idx + 6]])
+            [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
+            dst_plt.columns()[col_idx])
 
     # Disengage MagDeck
     mag_deck.disengage()
