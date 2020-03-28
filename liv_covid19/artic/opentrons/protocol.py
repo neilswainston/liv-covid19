@@ -21,7 +21,9 @@ _REAGENT_PLATE = {
     'components': {'primer_mix': 'A1',
                    'rt_reaction_mix': 'A2',
                    'primer_pool_a_mastermix': 'A3',
-                   'primer_pool_b_mastermix': 'A4'}
+                   'primer_pool_b_mastermix': 'A4',
+                   'beads': 'A5',
+                   'ethanol': 'A6'}
 }
 
 _PLATE = {
@@ -101,7 +103,7 @@ def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -160,14 +162,22 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
 def _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
              src_plt, dst_plt):
     '''Clean-up.'''
-    # Combine Pool A and Pool B:
-    protocol.comment('\nCombining Pools A and B')
+    protocol.comment('\nClean-up')
 
+    # Adding beads:
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, 'beads', 50)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 7, 'beads', 50)
+
+    # Combine Pool A and Pool B:
     for col_idx in range(_get_num_cols()):
         p50_multi.consolidate(
             25,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
-            dst_plt.columns()[col_idx])
+            dst_plt.columns()[col_idx],
+            mix_after=(1, 25.0))
+
+    # Incubate 10 minutes:
+    protocol.delay(minutes=10)
 
     # Disengage MagDeck
     mag_deck.disengage()
