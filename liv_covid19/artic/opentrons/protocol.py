@@ -30,7 +30,7 @@ _REAGENT_PLATE = {
 
 _PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': 'H6'
+    'last': 'H2'
 }
 
 
@@ -108,7 +108,7 @@ def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -145,11 +145,11 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     protocol.comment('\nAdd PCR primer mix')
 
     # Add Pool A:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1,
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1],
                         'primer_pool_a_mastermix', 22.5)
 
     # Add Pool B:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 7,
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [7],
                         'primer_pool_b_mastermix', 22.5)
 
     # Add samples to each pool:
@@ -171,11 +171,11 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
 def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
              engage_height=13.5):
     '''Clean-up.'''
+    # TODO: optimise tip-usage...
     protocol.comment('\nClean-up')
 
     # Adding beads:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, 'beads', 50)
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, 7, 'beads', 50)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1, 7], 'beads', 50)
 
     # Combine Pool A and Pool B:
     for col_idx in range(_get_num_cols()):
@@ -253,7 +253,7 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     '''Incubate.'''
-    if lid_temp:
+    if lid_temp and therm_mod.lid_temperature != lid_temp:
         therm_mod.set_lid_temperature(lid_temp)
 
     therm_mod.set_block_temperature(block_temp,
@@ -271,17 +271,22 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
         pipette.transfer(vol, src, dst, mix_after=(1, 5.0))
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = dst_plt.rows_by_name()['A']
+    dest_cols = []
+
+    for dst_col in dst_cols:
+        dest_cols.extend(
+            dst_plt.rows_by_name()['A'][
+                dst_col - 1:dst_col - 1 + _get_num_cols()])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
-                       dest_cols[dst_col - 1:dst_col - 1 + _get_num_cols()],
+                       dest_cols,
                        new_tip='never')
 
     pipette.drop_tip()
