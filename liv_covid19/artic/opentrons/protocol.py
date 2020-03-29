@@ -23,7 +23,9 @@ _REAGENT_PLATE = {
                    'primer_pool_a_mastermix': 'A3',
                    'primer_pool_b_mastermix': 'A4',
                    'beads': 'A5',
-                   'ethanol': 'A6'}
+                   'ethanol': 'A6',
+                   'water': 'A7',
+                   'waste': 'A12'}
 }
 
 _PLATE = {
@@ -39,12 +41,14 @@ def run(protocol):
         mag_plt = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
-          therm_plt)
+    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, therm_plt)
 
     therm_mod.set_block_temperature(4)
 
-    protocol.pause()
+    protocol.pause(msg='''\nRemove RNA plate from thermo block.
+    Move cDNA plate from PCR machine to thermo block.
+    Place new, empty PCR plate into PCR machine.
+    Press Continue.''')
 
     # PCR:
     _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
@@ -53,8 +57,7 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
-             therm_plt, mag_plt)
+    _cleanup(protocol, mag_deck, p50_multi, reag_plt, therm_plt, mag_plt)
 
 
 def _setup(protocol):
@@ -73,11 +76,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [3, 6]]
+         for slot in [3]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [2]]
+         for slot in [2, 9]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -98,8 +101,7 @@ def _setup(protocol):
         therm_plt, mag_plt
 
 
-def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
-          dst_plt):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
@@ -159,8 +161,8 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     _incubate(therm_mod, 4, 1)
 
 
-def _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
-             src_plt, dst_plt):
+def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
+             engage_height=13.5):
     '''Clean-up.'''
     protocol.comment('\nClean-up')
 
@@ -179,7 +181,66 @@ def _cleanup(protocol, therm_mod, mag_deck, p10_multi, p50_multi, reag_plt,
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
 
+    # Engage MagDeck:
+    mag_deck.engage(height=engage_height)
+    protocol.delay(minutes=5)
+
+    # Remove supernatant from magnetic beads:
+    _, waste = _get_plate_well(reag_plt, 'waste')
+
+    for col_idx in range(_get_num_cols()):
+        p50_multi.transfer(
+            75, dst_plt.columns()[col_idx], reag_plt[waste].top())
+
+    # Wash twice with ethanol:
+    _, ethanol = _get_plate_well(reag_plt, 'ethanol')
+    # air_vol = p50_multi.max_volume * 0.1
+
+    for _ in range(2):
+        for col_idx in range(_get_num_cols()):
+            p50_multi.pick_up_tip()
+
+            p50_multi.transfer(
+                200,
+                reag_plt[ethanol],
+                dst_plt.columns()[col_idx],
+                # air_gap=air_vol,
+                new_tip='never')
+
+            protocol.delay(seconds=17)
+
+            if not p50_multi.hw_pipette['has_tip']:
+                p50_multi.pick_up_tip()
+
+            p50_multi.transfer(
+                200,
+                [well.bottom(z=0.7) for well in dst_plt.columns()[col_idx]],
+                reag_plt[waste].top(),
+                # air_gap=air_vol,
+                new_tip='never')
+
+            p50_multi.drop_tip()
+
+    # Dry:
+    protocol.delay(seconds=30)
+
     # Disengage MagDeck
+    mag_deck.disengage()
+
+    # Resuspend:
+    _transfer_reagent(p50_multi, reag_plt, dst_plt, 1, 'water', 15)
+
+    # Incubate:
+    protocol.delay(minutes=2)
+
+    # Elute:
+    mag_deck.engage(height=engage_height)
+    protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
+
+    # Transfer clean product to a new well (move from col 1 to col 7, etc.):
+    _transfer_samples(p50_multi, dst_plt, dst_plt, 1, 7, 15)
+
+    # Disengage MagDeck:
     mag_deck.disengage()
 
 
