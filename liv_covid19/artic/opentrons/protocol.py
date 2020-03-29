@@ -30,7 +30,7 @@ _REAGENT_PLATE = {
 
 _PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': 'H2'
+    'last': 'H6'
 }
 
 
@@ -41,11 +41,13 @@ def run(protocol):
         mag_plt = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, therm_plt)
+    _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+          therm_plt)
 
     therm_mod.set_block_temperature(4)
 
-    protocol.pause(msg='''\nRemove RNA plate from thermo block.
+    protocol.pause(msg='''
+    Remove RNA plate from thermo block.
     Move cDNA plate from PCR machine to thermo block.
     Place new, empty PCR plate into PCR machine.
     Press Continue.''')
@@ -76,11 +78,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [3]]
+         for slot in [2]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [2, 9]]
+         for slot in [3, 6, 9]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -101,11 +103,12 @@ def _setup(protocol):
         therm_plt, mag_plt
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
+def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+          dst_plt):
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p10_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -121,7 +124,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p10_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
+    _transfer_reagent(p50_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
 
     # Incubate at 42C for 10 minute:
     therm_mod.close_lid()
@@ -150,8 +153,12 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
                         'primer_pool_b_mastermix', 22.5)
 
     # Add samples to each pool:
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 2.5)
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 7, 2.5)
+    for col_idx in range(_get_num_cols()):
+        p10_multi.distribute(2.5,
+                             src_plt.columns()[col_idx],
+                             [dst_plt.columns()[idx] for idx in [col_idx,
+                                                                 col_idx + 6]],
+                             mix_after=(1, 2.5))
 
     # PCR:
     protocol.comment('\nPerforming PCR')
