@@ -10,7 +10,6 @@ All rights reserved.
 import os.path
 
 from opentrons import simulate
-from opentrons.commands.commands import blow_out
 
 
 metadata = {'apiLevel': '2.1',
@@ -42,8 +41,7 @@ def run(protocol):
         mag_plt = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
-          therm_plt)
+    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, therm_plt)
 
     therm_mod.set_block_temperature(4)
 
@@ -79,11 +77,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2]]
+         for slot in [2, 3]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [3, 6, 9]]
+         for slot in [6, 9]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -104,13 +102,11 @@ def _setup(protocol):
         therm_plt, mag_plt
 
 
-def _cdna(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
-          dst_plt):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    # TODO: confirm that 300ul pipette can dispense 8ul...
-    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -126,7 +122,7 @@ def _cdna(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
+    _transfer_reagent(p10_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
 
     # Incubate at 42C for 10 minute:
     therm_mod.close_lid()
