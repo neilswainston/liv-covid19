@@ -175,15 +175,26 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     protocol.comment('\nClean-up')
 
     # Adding beads:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1, 7], 'beads', 50)
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1, 7], 'beads', 50,
+                        return_tip=True)
 
     # Combine Pool A and Pool B:
+    start_tip = [rack.next_tip() for rack in p50_multi.tip_racks][0]
+    tip = start_tip
+
     for col_idx in range(_get_num_cols()):
         p50_multi.consolidate(
             25,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
             dst_plt.columns()[col_idx],
-            mix_after=(1, 25.0))
+            mix_after=(1, 25.0),
+            trash=False)
+
+        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+        p50_multi.starting_tip = tip
+
+    p50_multi.starting_tip = start_tip
+    print([rack.next_tip() for rack in p50_multi.tip_racks])
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -271,7 +282,8 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
         pipette.transfer(vol, src, dst, mix_after=(1, 5.0))
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
+                        return_tip=False):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -289,7 +301,10 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
                        dest_cols,
                        new_tip='never')
 
-    pipette.drop_tip()
+    if return_tip:
+        pipette.return_tip()
+    else:
+        pipette.drop_tip()
 
 
 def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
