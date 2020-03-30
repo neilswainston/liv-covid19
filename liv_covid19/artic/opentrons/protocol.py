@@ -10,6 +10,7 @@ All rights reserved.
 import os.path
 
 from opentrons import simulate
+from opentrons.commands.commands import blow_out
 
 
 metadata = {'apiLevel': '2.1',
@@ -159,7 +160,8 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                              src_plt.columns()[col_idx],
                              [dst_plt.columns()[idx] for idx in [col_idx,
                                                                  col_idx + 6]],
-                             mix_after=(1, 2.5))
+                             mix_after=(1, 2.5),
+                             disposal_volume=0)
 
     # PCR:
     protocol.comment('\nPerforming PCR')
@@ -189,7 +191,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
             dst_plt.columns()[col_idx],
             mix_after=(1, 25.0),
-            trash=False)
+            trash=False,
+            disposal_volume=0)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
@@ -209,8 +212,11 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     for col_idx in range(_get_num_cols()):
         p300_multi.transfer(
-            75, dst_plt.columns()[col_idx], reag_plt[waste].top(),
-            trash=False)
+            75,
+            dst_plt.columns()[col_idx],
+            reag_plt[waste].top(),
+            trash=False,
+            disposal_volume=0)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
@@ -230,7 +236,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
                 reag_plt[ethanol],
                 dst_plt.columns()[col_idx],
                 # air_gap=air_vol,
-                new_tip='never')
+                new_tip='never',
+                disposal_volume=0)
 
             protocol.delay(seconds=17)
 
@@ -239,7 +246,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
                 [well.bottom(z=0.7) for well in dst_plt.columns()[col_idx]],
                 reag_plt[waste].top(),
                 # air_gap=air_vol,
-                new_tip='never')
+                new_tip='never',
+                disposal_volume=0)
 
             p300_multi.drop_tip()
 
@@ -283,7 +291,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(1, 5.0))
+        pipette.transfer(vol, src, dst, mix_after=(1, 5.0), disposal_volume=0)
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
@@ -303,7 +311,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
                        dest_cols,
-                       new_tip='never')
+                       new_tip='never',
+                       disposal_volume=0)
 
     if return_tip:
         pipette.return_tip()
@@ -316,7 +325,11 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + _get_num_cols()]:
-        pipette.transfer(vol, reag_plt[reag_well], dst, mix_after=(1, vol))
+        pipette.transfer(vol,
+                         reag_plt[reag_well],
+                         dst,
+                         mix_after=(1, vol),
+                         disposal_volume=0)
 
 
 def _do_pcr(therm_mod):
