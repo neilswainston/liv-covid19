@@ -175,7 +175,7 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     protocol.comment('\nClean-up')
 
     # Adding beads:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1, 7], 'beads', 50,
+    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1], 'beads', 50,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
@@ -193,8 +193,8 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p50_multi.starting_tip = tip
 
-    p50_multi.starting_tip = start_tip
-    print([rack.next_tip() for rack in p50_multi.tip_racks])
+    #p50_multi.starting_tip = start_tip
+    # print([rack.next_tip() for rack in p50_multi.tip_racks])
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -206,9 +206,18 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     # Remove supernatant from magnetic beads:
     _, waste = _get_plate_well(reag_plt, 'waste')
 
+    tip = start_tip
+    p50_multi.starting_tip = tip
+
     for col_idx in range(_get_num_cols()):
         p50_multi.transfer(
-            75, dst_plt.columns()[col_idx], reag_plt[waste].top())
+            75, dst_plt.columns()[col_idx], reag_plt[waste].top(),
+            trash=False)
+
+        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+        p50_multi.starting_tip = tip
+
+    p50_multi.starting_tip = start_tip
 
     # Wash twice with ethanol:
     _, ethanol = _get_plate_well(reag_plt, 'ethanol')
@@ -226,9 +235,6 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
                 new_tip='never')
 
             protocol.delay(seconds=17)
-
-            if not p50_multi.hw_pipette['has_tip']:
-                p50_multi.pick_up_tip()
 
             p50_multi.transfer(
                 200,
