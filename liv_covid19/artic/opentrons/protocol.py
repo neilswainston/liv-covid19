@@ -37,11 +37,11 @@ _PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, mag_deck, p10_multi, p50_multi, reag_plt, src_plt, therm_plt, \
+    therm_mod, mag_deck, p10_multi, p300_multi, reag_plt, src_plt, therm_plt, \
         mag_plt = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+    _cdna(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
           therm_plt)
 
     therm_mod.set_block_temperature(4)
@@ -53,13 +53,13 @@ def run(protocol):
     Press Continue.''')
 
     # PCR:
-    _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+    _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
          therm_plt)
 
     protocol.pause()
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p50_multi, reag_plt, therm_plt, mag_plt)
+    _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt)
 
 
 def _setup(protocol):
@@ -88,8 +88,8 @@ def _setup(protocol):
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 
-    p50_multi = protocol.load_instrument(
-        'p50_multi', 'right', tip_racks=tip_racks_200)
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -99,16 +99,17 @@ def _setup(protocol):
     therm_plt = therm_mod.load_labware(_PLATE['type'], 'dst_plt')
     mag_plt = mag_deck.load_labware(_PLATE['type'], 'dst_plt')
 
-    return therm_mod, mag_deck, p10_multi, p50_multi, reag_plt, src_plt, \
+    return therm_mod, mag_deck, p10_multi, p300_multi, reag_plt, src_plt, \
         therm_plt, mag_plt
 
 
-def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+def _cdna(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
           dst_plt):
     '''Generate cDNA.'''
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
+    # TODO: confirm that 300ul pipette can dispense 8ul...
+    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -124,7 +125,7 @@ def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p50_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
+    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix', 7.0)
 
     # Incubate at 42C for 10 minute:
     therm_mod.close_lid()
@@ -138,18 +139,18 @@ def _cdna(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     therm_mod.open_lid()
 
 
-def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
+def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
          dst_plt):
     '''Do PCR.'''
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
 
     # Add Pool A:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1],
+    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1],
                         'primer_pool_a_mastermix', 22.5)
 
     # Add Pool B:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [7],
+    _distribute_reagent(p300_multi, reag_plt, dst_plt, [7],
                         'primer_pool_b_mastermix', 22.5)
 
     # Add samples to each pool:
@@ -168,22 +169,22 @@ def _pcr(protocol, therm_mod, p10_multi, p50_multi, reag_plt, src_plt,
     _incubate(therm_mod, 4, 1)
 
 
-def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
+def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
              engage_height=13.5):
     '''Clean-up.'''
     # TODO: optimise tip-usage...
     protocol.comment('\nClean-up')
 
     # Adding beads:
-    _distribute_reagent(p50_multi, reag_plt, dst_plt, [1], 'beads', 50,
+    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'beads', 50,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
-    start_tip = [rack.next_tip() for rack in p50_multi.tip_racks][0]
+    start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
     tip = start_tip
 
     for col_idx in range(_get_num_cols()):
-        p50_multi.consolidate(
+        p300_multi.consolidate(
             25,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
             dst_plt.columns()[col_idx],
@@ -191,10 +192,7 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
             trash=False)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p50_multi.starting_tip = tip
-
-    #p50_multi.starting_tip = start_tip
-    # print([rack.next_tip() for rack in p50_multi.tip_racks])
+        p300_multi.starting_tip = tip
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -207,27 +205,27 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     _, waste = _get_plate_well(reag_plt, 'waste')
 
     tip = start_tip
-    p50_multi.starting_tip = tip
+    p300_multi.starting_tip = tip
 
     for col_idx in range(_get_num_cols()):
-        p50_multi.transfer(
+        p300_multi.transfer(
             75, dst_plt.columns()[col_idx], reag_plt[waste].top(),
             trash=False)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p50_multi.starting_tip = tip
+        p300_multi.starting_tip = tip
 
-    p50_multi.starting_tip = start_tip
+    p300_multi.starting_tip = start_tip
 
     # Wash twice with ethanol:
     _, ethanol = _get_plate_well(reag_plt, 'ethanol')
-    # air_vol = p50_multi.max_volume * 0.1
+    # air_vol = p300_multi.max_volume * 0.1
 
     for _ in range(2):
         for col_idx in range(_get_num_cols()):
-            p50_multi.pick_up_tip()
+            p300_multi.pick_up_tip()
 
-            p50_multi.transfer(
+            p300_multi.transfer(
                 200,
                 reag_plt[ethanol],
                 dst_plt.columns()[col_idx],
@@ -236,14 +234,14 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
 
             protocol.delay(seconds=17)
 
-            p50_multi.transfer(
+            p300_multi.transfer(
                 200,
                 [well.bottom(z=0.7) for well in dst_plt.columns()[col_idx]],
                 reag_plt[waste].top(),
                 # air_gap=air_vol,
                 new_tip='never')
 
-            p50_multi.drop_tip()
+            p300_multi.drop_tip()
 
     # Dry:
     protocol.delay(seconds=30)
@@ -252,7 +250,7 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     mag_deck.disengage()
 
     # Resuspend:
-    _transfer_reagent(p50_multi, reag_plt, dst_plt, 1, 'water', 15)
+    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 15)
 
     # Incubate:
     protocol.delay(minutes=2)
@@ -262,7 +260,7 @@ def _cleanup(protocol, mag_deck, p50_multi, reag_plt, src_plt, dst_plt,
     protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
 
     # Transfer clean product to a new well (move from col 1 to col 7, etc.):
-    _transfer_samples(p50_multi, dst_plt, dst_plt, 1, 7, 15)
+    _transfer_samples(p300_multi, dst_plt, dst_plt, 1, 7, 15)
 
     # Disengage MagDeck:
     mag_deck.disengage()
