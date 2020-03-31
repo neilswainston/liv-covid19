@@ -1,0 +1,20 @@
+<link rel="stylesheet" href="static/progress/progress.css">
+<div data-ng-init="progressCtrl.init()">
+	<div class="modal-header">
+		<h4 class="modal-title">{{progressCtrl.progressTitle}}</h4>
+	</div>
+	<div class="modal-body">
+		<div data-ng-show="progressCtrl.update().message.length > 0" data-ng-class="{'alert-danger': progressCtrl.update().status == 'error', 'alert-warning': progressCtrl.update().status == 'cancelled', 'alert-success': progressCtrl.update().status == 'finished'}" class="alert">{{progressCtrl.update().message}}</div>
+		<div class="progress">
+			<div class="progress-bar" id="progress-bar" role="progressbar"
+				aria-valuenow="{{progressCtrl.update().progress}}" aria-valuemin="0" aria-valuemax="100"
+				style="width: 0%" data-ng-style="{'width': progressCtrl.update().progress + '%'}">
+				<span id="progress-text">{{progressCtrl.update().iteration}}</span>	
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+	 	<button type="button" class="btn btn-default" data-ng-click="progressCtrl.doCancel()" data-ng-disabled="progressCtrl.update().status != 'running'">Cancel</button>
+		<button type="button" class="btn btn-primary" data-ng-click="progressCtrl.close()" data-ng-disabled="progressCtrl.update().status == 'submitting' || progressCtrl.update().status == 'running'">OK</button>
+	</div>
+</div>

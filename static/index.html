@@ -1,0 +1,73 @@
+<!doctype html>
+<html data-ng-app="livCovApp" data-ng-controller="livCovCtrl as ctrl">
+<head>
+<title>GeneMill COVID-19</title>
+<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="//twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.min.js"></script>
+<script src="//www.gstatic.com/charts/loader.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-route.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-sanitize.js"></script>
+<script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-1.3.3.js"></script>
+<script src="static/error/error.module.js"></script>
+<script src="static/error/error.service.js"></script>
+<script src="static/error/error.ctrl.js"></script>
+<script src="static/livCov/livCov.module.js"></script>
+<script src="static/livCov/livCov.service.js"></script>
+<script src="static/livCov/livCov.ctrl.js"></script>
+<script src="static/livCov/filereader.directive.js"></script>
+<script src="static/progress/progress.module.js"></script>
+<script src="static/progress/progress.service.js"></script>
+<script src="static/progress/progress.ctrl.js"></script>
+<link rel="shortcut icon" href="static/favicon.ico">
+<base href="/">
+</head>
+<body>
+<!-- Navigation bar -->
+<nav class="navbar navbar-default">
+	<div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed"
+				data-toggle="collapse" data-target="#navbar-collapse"
+				aria-expanded="false">
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href=".">
+				<span><img alt="GeneMill" src="static/favicon.ico" class="logo"></span>
+				GeneMill COVID-19
+			</a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse"
+			id="navbar-collapse">
+			<ul class="nav navbar-nav">		
+				<li class="dropdown">		
+					<a href="#" class="dropdown-toggle"		
+						data-toggle="dropdown" role="button" aria-haspopup="true"		
+						aria-expanded="false">Apps<span class="caret"></span>		
+					</a>		
+					<ul class="dropdown-menu">		
+						<li data-ng-class="{active: ctrl.route.current.app === 'Normalise'}">		
+							<a href="./normalise">Normalise</a>		
+						</li>				
+					</ul>		
+				</li>	
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="col-md-12">
+	<div data-ng-view></div>
+</div>
+</body>
+</html>

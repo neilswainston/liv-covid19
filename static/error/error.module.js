@@ -1,0 +1,1 @@
+var errorApp = angular.module("errorApp", []);
