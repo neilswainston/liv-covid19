@@ -181,10 +181,26 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     _incubate(therm_mod, 4, 1)
 
 
+def _do_pcr(therm_mod):
+    '''Do PCR.'''
+    therm_mod.close_lid()
+    therm_mod.set_lid_temperature(105)
+    therm_mod.set_block_temperature(98, hold_time_seconds=30)
+
+    profile = [
+        {'temperature': 98, 'hold_time_seconds': 15},
+        {'temperature': 65, 'hold_time_seconds': 5}
+    ]
+
+    therm_mod.execute_profile(steps=profile, repetitions=30,
+                              block_max_volume=25)
+
+    therm_mod.open_lid()
+
+
 def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
              engage_height):
     '''Clean-up.'''
-    # TODO: amend pipette flow rates appropriately.
     protocol.comment('\nClean-up')
 
     # Add beads:
@@ -203,26 +219,29 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     mag_deck.engage(height=engage_height)
     protocol.delay(minutes=5)
 
+    # Slow flow rates:
+    _set_flow_rate(protocol, p300_multi, aspirate=25, dispense=150)
+
     # Remove supernatant from magnetic beads:
     protocol.comment('\nRemove supernatant')
     _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip)
 
-    # Slow flow rates:
-    asp_rate = p300_multi.flow_rate.aspirate
-    disp_rate = p300_multi.flow_rate.dispense
-    p300_multi.flow_rate.aspirate = asp_rate / 10
-    p300_multi.flow_rate.dispense = disp_rate / 10
-
     # Wash twice with ethanol:
+    air_gap = p300_multi.max_volume * 0.1
+
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
+
+        # TODO: vol + air_gap > p300_multi.max_volume,
+        # therefore air_gap cannot be set.
         _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
-                            return_tip=count == 0)
+                            return_tip=count == 0, air_gap=0)
 
         protocol.delay(seconds=17)
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
-        _to_waste(p300_multi, dst_plt, reag_plt, 200, dirty_tip)
+        _to_waste(p300_multi, dst_plt, reag_plt, 200, dirty_tip,
+                  air_gap=air_gap)
 
     # Dry:
     protocol.delay(seconds=30)
@@ -279,7 +298,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, air_gap=0):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, 'waste')
 
@@ -292,7 +311,8 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip):
             src_plt.columns()[col_idx],
             waste_plt[waste].top(),
             trash=False,
-            disposal_volume=0)
+            disposal_volume=0,
+            air_gap=air_gap)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
@@ -309,7 +329,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
-                        return_tip=False, mix_before=None):
+                        return_tip=False, mix_before=None, air_gap=0):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -327,7 +347,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                        [well.top() for well in dest_cols],
                        new_tip='never',
                        disposal_volume=0,
-                       mix_before=mix_before)
+                       mix_before=mix_before,
+                       air_gap=air_gap)
 
     if return_tip:
         pipette.return_tip()
@@ -347,21 +368,29 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
                          disposal_volume=0)
 
 
-def _do_pcr(therm_mod):
-    '''Do PCR.'''
-    therm_mod.close_lid()
-    therm_mod.set_lid_temperature(105)
-    therm_mod.set_block_temperature(98, hold_time_seconds=30)
+def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
+                   blow_out=None):
+    '''Set flow rates.'''
+    old_aspirate = pipette.flow_rate.aspirate
+    old_dispense = pipette.flow_rate.dispense
+    old_blow_out = pipette.flow_rate.blow_out
 
-    profile = [
-        {'temperature': 98, 'hold_time_seconds': 15},
-        {'temperature': 65, 'hold_time_seconds': 5}
-    ]
+    if aspirate and aspirate != old_aspirate:
+        protocol.comment('Updating aspirate from %i to %i'
+                         % (old_aspirate, aspirate))
+        pipette.flow_rate.aspirate = aspirate
 
-    therm_mod.execute_profile(steps=profile, repetitions=30,
-                              block_max_volume=25)
+    if dispense and dispense != old_dispense:
+        protocol.comment('Updating dispense from %i to %i'
+                         % (old_dispense, dispense))
+        pipette.flow_rate.dispense = dispense
 
-    therm_mod.open_lid()
+    if blow_out and blow_out != old_blow_out:
+        protocol.comment('Updating blow_out from %i to %i'
+                         % (old_blow_out, blow_out))
+        pipette.flow_rate.blow_out = blow_out
+
+    return old_aspirate, old_dispense, old_blow_out
 
 
 def _get_num_cols():
