@@ -164,7 +164,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                              src_plt.columns()[col_idx],
                              [dst_plt.columns()[idx] for idx in [col_idx,
                                                                  col_idx + 6]],
-                             mix_after=(1, 2.5),
+                             mix_after=(3, 2.5),
                              disposal_volume=0)
 
     # PCR:
@@ -183,7 +183,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     # Add beads:
     protocol.comment('\nAdd beads')
     _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'beads', 50,
-                        return_tip=True)
+                        return_tip=True, mix_before=(3, 200))
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
@@ -246,7 +246,7 @@ def _cleanup_pool(p300_multi, src_plt, dst_plt):
             25,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
             dst_plt.columns()[col_idx],
-            mix_after=(1, 25.0),
+            mix_after=(3, 25.0),
             trash=False,
             disposal_volume=0)
 
@@ -292,11 +292,11 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(1, 5.0), disposal_volume=0)
+        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
-                        return_tip=False):
+                        return_tip=False, mix_before=None):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -313,7 +313,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                        reag_plt.wells_by_name()[reag_well],
                        [well.top() for well in dest_cols],
                        new_tip='never',
-                       disposal_volume=0)
+                       disposal_volume=0,
+                       mix_before=mix_before)
 
     if return_tip:
         pipette.return_tip()
@@ -329,7 +330,7 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
         pipette.transfer(vol,
                          reag_plt[reag_well],
                          dst,
-                         mix_after=(1, vol),
+                         mix_after=(3, vol),
                          disposal_volume=0)
 
 
