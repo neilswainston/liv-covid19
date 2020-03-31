@@ -207,6 +207,12 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     protocol.comment('\nRemove supernatant')
     _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip)
 
+    # Slow flow rates:
+    asp_rate = p300_multi.flow_rate.aspirate
+    disp_rate = p300_multi.flow_rate.dispense
+    p300_multi.flow_rate.aspirate = asp_rate / 10
+    p300_multi.flow_rate.dispense = disp_rate / 10
+
     # Wash twice with ethanol:
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
