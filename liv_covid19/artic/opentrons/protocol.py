@@ -60,8 +60,7 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, therm_plt,
-             mag_plt)
+    _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt)
 
 
 def _setup(protocol):
@@ -107,6 +106,8 @@ def _setup(protocol):
 
 def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     '''Generate cDNA.'''
+    protocol.comment('\nGenerate cDNA')
+
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
     _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'primer_mix', 8.0)
@@ -142,6 +143,8 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
 def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
          dst_plt):
     '''Do PCR.'''
+    protocol.comment('\nSetup PCR')
+
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
 
@@ -154,6 +157,8 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                         'primer_pool_b_mastermix', 22.5)
 
     # Add samples to each pool:
+    protocol.comment('\nSplit samples into pools A and B')
+
     for col_idx in range(_get_num_cols()):
         p10_multi.distribute(2.5,
                              src_plt.columns()[col_idx],
@@ -163,15 +168,15 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                              disposal_volume=0)
 
     # PCR:
-    protocol.comment('\nPerforming PCR')
+    protocol.comment('\nPerform PCR')
     _do_pcr(therm_mod)
 
     # Incubate at 4C for 1 minute:
     _incubate(therm_mod, 4, 1)
 
 
-def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
-             dst_plt, engage_height=13.5):
+def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
+             engage_height=13.5):
     '''Clean-up.'''
     protocol.comment('\nClean-up')
 
