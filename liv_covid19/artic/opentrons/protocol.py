@@ -30,9 +30,13 @@ _REAGENT_PLATE = {
                    'waste': 'A12'}
 }
 
-_PLATE = {
+_SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
     'last': 'H6'
+}
+
+_MAG_PLATE = {
+    'type': '4ti_96_wellplate_350ul'
 }
 
 
@@ -96,9 +100,9 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plt = temp_deck.load_labware(_PLATE['type'], 'src_plt')
-    therm_plt = therm_mod.load_labware(_PLATE['type'], 'dst_plt')
-    mag_plt = mag_deck.load_labware(_PLATE['type'], 'dst_plt')
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'src_plt')
+    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'dst_plt')
+    mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'dst_plt')
 
     return therm_mod, mag_deck, p10_multi, p300_multi, reag_plt, src_plt, \
         therm_plt, mag_plt
@@ -353,7 +357,7 @@ def _do_pcr(therm_mod):
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_PLATE['last'][1])
+    return int(_SAMPLE_PLATE['last'][1])
 
 
 def _get_plate_well(reag_plt, reagent):
