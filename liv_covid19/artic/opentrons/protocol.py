@@ -8,6 +8,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 @author: neilswainston
 '''
 # pylint: disable=invalid-name
+# pylint: disable=protected-access
 # pylint: disable=too-many-arguments
 import os.path
 
@@ -64,9 +65,8 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    # TODO: specify engage_height correctly.
     _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt,
-             engage_height=13.5)
+             engage_height=mag_plt._dimensions['zDimension'])
 
 
 def _setup(protocol):
