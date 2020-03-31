@@ -64,7 +64,9 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt)
+    # TODO: specify engage_height correctly.
+    _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt,
+             engage_height=13.5)
 
 
 def _setup(protocol):
@@ -180,8 +182,9 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
 
 
 def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
-             engage_height=13.5):
+             engage_height):
     '''Clean-up.'''
+    # TODO: amend pipette flow rates appropriately.
     protocol.comment('\nClean-up')
 
     # Add beads:
