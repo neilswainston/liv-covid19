@@ -1,7 +1,9 @@
 '''
 (c) University of Liverpool 2020
 
-All rights reserved.
+Licensed under the MIT License.
+
+To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 
 @author: neilswainston
 '''
@@ -30,7 +32,7 @@ _REAGENT_PLATE = {
 
 _PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': 'H2'
+    'last': 'H6'
 }
 
 
@@ -58,7 +60,8 @@ def run(protocol):
     protocol.pause()
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p300_multi, reag_plt, therm_plt, mag_plt)
+    _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, therm_plt,
+             mag_plt)
 
 
 def _setup(protocol):
@@ -167,10 +170,9 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     _incubate(therm_mod, 4, 1)
 
 
-def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
-             engage_height=13.5):
+def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
+             dst_plt, engage_height=13.5):
     '''Clean-up.'''
-    # TODO: optimise tip-usage...
     protocol.comment('\nClean-up')
 
     # Adding beads:
@@ -178,20 +180,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
-    start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
-    tip = start_tip
-
-    for col_idx in range(_get_num_cols()):
-        p300_multi.consolidate(
-            25,
-            [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
-            dst_plt.columns()[col_idx],
-            mix_after=(1, 25.0),
-            trash=False,
-            disposal_volume=0)
-
-        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p300_multi.starting_tip = tip
+    dirty_tip = _cleanup_pool(p300_multi, src_plt, dst_plt)
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -201,51 +190,16 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     protocol.delay(minutes=5)
 
     # Remove supernatant from magnetic beads:
-    _, waste = _get_plate_well(reag_plt, 'waste')
-
-    tip = start_tip
-    p300_multi.starting_tip = tip
-
-    for col_idx in range(_get_num_cols()):
-        p300_multi.transfer(
-            75,
-            dst_plt.columns()[col_idx],
-            reag_plt[waste].top(),
-            trash=False,
-            disposal_volume=0)
-
-        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p300_multi.starting_tip = tip
-
-    p300_multi.starting_tip = start_tip
+    _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip)
 
     # Wash twice with ethanol:
-    _, ethanol = _get_plate_well(reag_plt, 'ethanol')
-    # air_vol = p300_multi.max_volume * 0.1
-
     for _ in range(2):
-        for col_idx in range(_get_num_cols()):
-            p300_multi.pick_up_tip()
+        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
+                            return_tip=True)
 
-            p300_multi.transfer(
-                200,
-                reag_plt[ethanol],
-                dst_plt.columns()[col_idx],
-                # air_gap=air_vol,
-                new_tip='never',
-                disposal_volume=0)
+        protocol.delay(seconds=17)
 
-            protocol.delay(seconds=17)
-
-            p300_multi.transfer(
-                200,
-                [well.bottom(z=0.7) for well in dst_plt.columns()[col_idx]],
-                reag_plt[waste].top(),
-                # air_gap=air_vol,
-                new_tip='never',
-                disposal_volume=0)
-
-            p300_multi.drop_tip()
+        _to_waste(p300_multi, dst_plt, reag_plt, 200, dirty_tip)
 
     # Dry:
     protocol.delay(seconds=30)
@@ -270,6 +224,26 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     mag_deck.disengage()
 
 
+def _cleanup_pool(p300_multi, src_plt, dst_plt):
+    '''Cleanup pool A and B step.'''
+    start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
+    tip = start_tip
+
+    for col_idx in range(_get_num_cols()):
+        p300_multi.consolidate(
+            25,
+            [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
+            dst_plt.columns()[col_idx],
+            mix_after=(1, 25.0),
+            trash=False,
+            disposal_volume=0)
+
+        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+        p300_multi.starting_tip = tip
+
+    return start_tip
+
+
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     '''Incubate.'''
     if lid_temp and therm_mod.lid_temperature != lid_temp:
@@ -278,6 +252,25 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
                                     hold_time_seconds=seconds)
+
+
+def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip):
+    '''Move to waste.'''
+    _, waste = _get_plate_well(waste_plt, 'waste')
+
+    tip = start_tip
+    p300_multi.starting_tip = tip
+
+    for col_idx in range(_get_num_cols()):
+        p300_multi.transfer(
+            vol,
+            src_plt.columns()[col_idx],
+            waste_plt[waste].top(),
+            trash=False,
+            disposal_volume=0)
+
+        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+        p300_multi.starting_tip = tip
 
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
@@ -306,7 +299,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
-                       dest_cols,
+                       [well.top() for well in dest_cols],
                        new_tip='never',
                        disposal_volume=0)
 
