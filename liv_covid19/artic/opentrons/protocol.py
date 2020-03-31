@@ -175,11 +175,13 @@ def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
     '''Clean-up.'''
     protocol.comment('\nClean-up')
 
-    # Adding beads:
+    # Add beads:
+    protocol.comment('\nAdd beads')
     _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'beads', 50,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
+    protocol.comment('\nCombine Pool A and Pool B')
     dirty_tip = _cleanup_pool(p300_multi, src_plt, dst_plt)
 
     # Incubate 10 minutes:
@@ -190,15 +192,18 @@ def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
     protocol.delay(minutes=5)
 
     # Remove supernatant from magnetic beads:
+    protocol.comment('\nRemove supernatant')
     _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip)
 
     # Wash twice with ethanol:
-    for _ in range(2):
+    for count in range(2):
+        protocol.comment('\nEthanol #%i' % (count + 1))
         _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
-                            return_tip=True)
+                            return_tip=count == 0)
 
         protocol.delay(seconds=17)
 
+        protocol.comment('\nEthanol waste #%i' % (count + 1))
         _to_waste(p300_multi, dst_plt, reag_plt, 200, dirty_tip)
 
     # Dry:
@@ -207,8 +212,9 @@ def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
     # Disengage MagDeck
     mag_deck.disengage()
 
-    # Resuspend:
-    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 15)
+    # Resuspend in water:
+    protocol.comment('\nResuspend in water')
+    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'water', 15)
 
     # Incubate:
     protocol.delay(minutes=2)
@@ -218,6 +224,7 @@ def _cleanup(protocol, mag_deck, p10_multi, p300_multi, reag_plt, src_plt,
     protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
 
     # Transfer clean product to a new well (move from col 1 to col 7, etc.):
+    protocol.comment('\nTransfer clean product')
     _transfer_samples(p300_multi, dst_plt, dst_plt, 1, 7, 15)
 
     # Disengage MagDeck:
