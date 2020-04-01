@@ -235,12 +235,12 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
         # TODO: vol + air_gap > p300_multi.max_volume,
         # therefore air_gap cannot be set.
         _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
-                            return_tip=count == 0, air_gap=0)
+                            return_tip=count == 0, air_gap=0, top=True)
 
         protocol.delay(seconds=17)
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
-        _to_waste(p300_multi, dst_plt, reag_plt, 200, dirty_tip,
+        _to_waste(p300_multi, dst_plt, reag_plt, 250, dirty_tip,
                   air_gap=air_gap)
 
     # Dry:
@@ -251,7 +251,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     # Resuspend in water:
     protocol.comment('\nResuspend in water')
-    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'water', 15)
+    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 15)
 
     # Incubate:
     protocol.delay(minutes=2)
@@ -329,7 +329,8 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0):
+                        return_tip=False, mix_before=None, air_gap=0,
+                        top=False):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -344,7 +345,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
-                       [well.top() for well in dest_cols],
+                       [well.top() if top else well
+                        for well in dest_cols],
                        new_tip='never',
                        disposal_volume=0,
                        mix_before=mix_before,
