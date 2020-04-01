@@ -13,6 +13,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 import json
 import os
 import sys
+import tempfile
 import traceback
 import uuid
 
@@ -28,7 +29,7 @@ SECRET_KEY = str(uuid.uuid4())
 _STATIC_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                               'static')
 
-_EXPORT_FOLDER = os.path.join(_STATIC_FOLDER, 'export')
+_EXPORT_FOLDER = tempfile.gettempdir()
 
 app = Flask(__name__, static_folder=_STATIC_FOLDER)
 app.config.from_object(__name__)
