@@ -127,7 +127,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _incubate(therm_mod, 65, 5, lid_temp=105)
 
     # Incubate (on ice) / at min temp for 1 minute:
-    _incubate(therm_mod, 4, 1)
+    _incubate(therm_mod, 8, 1)
     therm_mod.open_lid()
 
     # Add RT reaction mix:
@@ -142,7 +142,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _incubate(therm_mod, 70, 10, lid_temp=105)
 
     # Incubate at 4C for 1 minute:
-    _incubate(therm_mod, 4, 1, lid_temp=105)
+    _incubate(therm_mod, 8, 1, lid_temp=105)
     therm_mod.open_lid()
 
 
@@ -177,8 +177,8 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     protocol.comment('\nPerform PCR')
     _do_pcr(therm_mod)
 
-    # Incubate at 4C for 1 minute:
-    _incubate(therm_mod, 4, 1)
+    # Incubate at 8C for 1 minute:
+    _incubate(therm_mod, 8, 1)
 
 
 def _do_pcr(therm_mod):
