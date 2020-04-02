@@ -26,10 +26,20 @@ def run(in_filename, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Write Mantis plate:
+    # Write Mantis worklist:
     mantis_df.to_csv(os.path.join(out_dir, 'mantis.csv'),
                      index=False, header=False)
 
+    # Get Mosquito worklist:
+    mosquito_df = _get_mosquito(in_df)
+
+    # Write Mantis plate:
+    mosquito_df.to_csv(os.path.join(out_dir, 'mosquito.csv'),
+                       index=False)
+
+
+def _get_mosquito(in_df):
+    '''Get Mosquito worklist.'''
     n, k = in_df.shape
 
     data = {'Nanolitres': in_df.to_numpy().ravel('F'),
@@ -37,10 +47,20 @@ def run(in_filename, out_dir):
             'Row': np.tile(np.asarray(in_df.index), k)}
 
     mosquito_df = pd.DataFrame(data, columns=['Column', 'Row', 'Nanolitres'])
+    mosquito_df['Position'] = 2
+    mosquito_df['Column dest'] = mosquito_df['Column']
+    mosquito_df['Row dest'] = mosquito_df['Row']
+    mosquito_df['Position dest'] = 3
 
-    # Write Mantis plate:
-    mosquito_df.to_csv(os.path.join(out_dir, 'mosquito.csv'),
-                       index=False)
+    mosquito_df = mosquito_df[['Position', 'Column', 'Row',
+                               'Position dest', 'Column dest', 'Row dest',
+                               'Nanolitres']]
+
+    mosquito_df.columns = ['Position', 'Column', 'Row',
+                           'Position', 'Column', 'Row',
+                           'Nanolitres']
+
+    return mosquito_df
 
 
 def main(args):
