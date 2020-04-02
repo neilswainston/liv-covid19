@@ -23,22 +23,36 @@ metadata = {'apiLevel': '2.1',
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
     'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2'}
+                   'rt_reaction_mix': 'A2',
+                   'primer_pool_a_mastermix': 'A3',
+                   'primer_pool_b_mastermix': 'A4',
+                   'beads': 'A5',
+                   'ethanol': 'A6',
+                   'water': 'A7',
+                   'waste': 'A12'}
 }
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H12']
+    'last': ['H6']
+}
+
+_MAG_PLATE = {
+    'type': '4ti_96_wellplate_350ul'
 }
 
 
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, reag_plt, src_plts, therm_plts = _setup(protocol)
+    therm_mod, p10_multi, p300_multi, reag_plt, src_plts, therm_plts = \
+        _setup(protocol)
 
-    # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plts, therm_plts)
+    therm_mod.set_block_temperature(4)
+
+    # PCR:
+    _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
+         therm_plts)
 
 
 def _setup(protocol):
@@ -57,53 +71,81 @@ def _setup(protocol):
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
          for slot in [2, 3]]
 
+    tip_racks_200 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
+         for slot in [6, 9]]
+
     # Add pipettes:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
+
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')]
-    therm_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
+    src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
+    therm_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
 
-    return therm_mod, p10_multi, reag_plt, src_plts, therm_plts
+    return therm_mod, p10_multi, p300_multi, reag_plt, src_plts, therm_plts
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plts, dst_plts):
-    '''Generate cDNA.'''
-    protocol.comment('\nGenerate cDNA')
+def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
+         dst_plts):
+    '''Do PCR.'''
+    protocol.comment('\nSetup PCR')
 
-    # Add primer mix:
-    protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p10_multi, reag_plt, dst_plts, [1], 'primer_mix', 8.0)
+    # Add PCR primer mix:
+    protocol.comment('\nAdd PCR primer mix')
 
-    # Add RNA samples:
-    protocol.comment('\nAdd RNA samples')
-    _transfer_samples(p10_multi, src_plts, dst_plts, 1, 1, 5.0)
+    prev_aspirate, _, _ = _set_flow_rate(protocol, p300_multi, aspirate=50)
 
-    # Incubate at 65C for 5 minute:
-    therm_mod.close_lid()
-    _incubate(therm_mod, 65, 5, lid_temp=105)
+    # Add Pool A:
+    _distribute_reagent(p300_multi, reag_plt, dst_plts, [1],
+                        'primer_pool_a_mastermix', 22.5, bottom=1.5)
 
-    # Incubate (on ice) / at min temp for 1 minute:
+    # Add Pool B:
+    _distribute_reagent(p300_multi, reag_plt, dst_plts, [7],
+                        'primer_pool_b_mastermix', 22.5, bottom=1.5)
+
+    _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
+
+    # Add samples to each pool:
+    protocol.comment('\nSplit samples into pools A and B')
+
+    for plt_idx, (src_plt, dst_plt) in enumerate(zip(src_plts, dst_plts)):
+        for col_idx in range(_get_num_cols()[plt_idx]):
+            p10_multi.distribute(
+                2.5,
+                src_plt.columns()[col_idx],
+                [dst_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
+                mix_after=(3, 2.5),
+                disposal_volume=0)
+
+    # PCR:
+    protocol.comment('\nPerform PCR')
+    _do_pcr(therm_mod)
+
+    # Incubate at 8C for 1 minute:
     _incubate(therm_mod, 8, 1)
-    therm_mod.open_lid()
 
-    # Add RT reaction mix:
-    protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p10_multi, reag_plt, dst_plts, 1, 'rt_reaction_mix', 7.0)
 
-    # Incubate at 42C for 10 minute:
+def _do_pcr(therm_mod):
+    '''Do PCR.'''
     therm_mod.close_lid()
-    _incubate(therm_mod, 42, 50, lid_temp=105)
+    therm_mod.set_lid_temperature(105)
+    therm_mod.set_block_temperature(98, hold_time_seconds=30)
 
-    # Incubate at 70C for 10 minute:
-    _incubate(therm_mod, 70, 10, lid_temp=105)
+    profile = [
+        {'temperature': 98, 'hold_time_seconds': 15},
+        {'temperature': 65, 'hold_time_seconds': 5}
+    ]
 
-    # Incubate at 4C for 1 minute:
-    _incubate(therm_mod, 8, 1, lid_temp=105)
+    therm_mod.execute_profile(steps=profile, repetitions=30,
+                              block_max_volume=25)
+
     therm_mod.open_lid()
 
 
@@ -115,18 +157,6 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
                                     hold_time_seconds=seconds)
-
-
-def _transfer_samples(pipette, src_plts, dst_plts, src_col, dst_col, vol):
-    '''Transfer samples.'''
-    num_cols = _get_num_cols()
-
-    for idx, (src_plt, dst_plt) in enumerate(zip(src_plts, dst_plts)):
-        for src, dst in zip(
-                src_plt.columns()[src_col - 1:src_col - 1 + num_cols[idx]],
-                dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols[idx]]):
-            pipette.transfer(vol, src, dst, mix_after=(3, vol),
-                             disposal_volume=0)
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plts, dst_cols, reagent, vol,
@@ -160,21 +190,6 @@ def _distribute_reagent(pipette, reag_plt, dst_plts, dst_cols, reagent, vol,
         pipette.return_tip()
     else:
         pipette.drop_tip()
-
-
-def _transfer_reagent(pipette, reag_plt, dst_plts, dst_col, reagent, vol):
-    '''Transfer reagent.'''
-    _, reag_well = _get_plate_well(reag_plt, reagent)
-
-    for idx, dst_plt in enumerate(dst_plts):
-        num_cols = _get_num_cols()[idx]
-
-        for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]:
-            pipette.transfer(vol,
-                             reag_plt[reag_well],
-                             dst,
-                             mix_after=(3, vol),
-                             disposal_volume=0)
 
 
 def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
