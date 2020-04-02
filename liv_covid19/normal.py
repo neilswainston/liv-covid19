@@ -56,7 +56,7 @@ def _get_mosquito(in_df):
     '''Get Mosquito worklist.'''
     n, k = in_df.shape
 
-    data = {'Nanolitres': in_df.to_numpy().ravel('F'),
+    data = {'Nanolitres': in_df.to_numpy().ravel('F') * 1000,
             'Column': np.asarray(in_df.columns).repeat(n),
             'Row': np.tile(np.asarray(in_df.index), k)}
 
