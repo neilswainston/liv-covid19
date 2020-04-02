@@ -57,7 +57,7 @@ def _setup(protocol):
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
          for slot in [2, 3]]
 
-    # Add pipettes:
+    # Add pipette:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 

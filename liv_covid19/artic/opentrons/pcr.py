@@ -22,14 +22,8 @@ metadata = {'apiLevel': '2.1',
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
-    'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2',
-                   'primer_pool_a_mastermix': 'A3',
-                   'primer_pool_b_mastermix': 'A4',
-                   'beads': 'A5',
-                   'ethanol': 'A6',
-                   'water': 'A7',
-                   'waste': 'A12'}
+    'components': {'primer_pool_a_mastermix': 'A3',
+                   'primer_pool_b_mastermix': 'A4'}
 }
 
 _SAMPLE_PLATE = {
