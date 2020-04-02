@@ -154,13 +154,17 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     # Add PCR primer mix:
     protocol.comment('\nAdd PCR primer mix')
 
+    prev_aspirate, _, _ = _set_flow_rate(protocol, p300_multi, aspirate=50)
+
     # Add Pool A:
     _distribute_reagent(p300_multi, reag_plt, dst_plt, [1],
-                        'primer_pool_a_mastermix', 22.5)
+                        'primer_pool_a_mastermix', 22.5, bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt, dst_plt, [7],
-                        'primer_pool_b_mastermix', 22.5)
+                        'primer_pool_b_mastermix', 22.5, bottom=1.5)
+
+    _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
 
     # Add samples to each pool:
     protocol.comment('\nSplit samples into pools A and B')
@@ -235,7 +239,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
         # TODO: vol + air_gap > p300_multi.max_volume,
         # therefore air_gap cannot be set.
         _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
-                            return_tip=count == 0, air_gap=0, top=True)
+                            return_tip=count == 0, air_gap=0, top=0)
 
         protocol.delay(seconds=17)
 
@@ -330,7 +334,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
-                        top=False):
+                        top=None, bottom=None):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -345,7 +349,9 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
-                       [well.top() if top else well
+                       [well.top(top) if top is not None
+                        else (well.bottom(bottom) if bottom is not None
+                              else well)
                         for well in dest_cols],
                        new_tip='never',
                        disposal_volume=0,
