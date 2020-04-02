@@ -287,7 +287,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return [int(well[1]) for well in _SAMPLE_PLATE['last']]
+    return [int(well[1:]) for well in _SAMPLE_PLATE['last']]
 
 
 def _get_plate_well(reag_plt, reagent):

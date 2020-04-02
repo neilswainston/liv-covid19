@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H12']
+    'last': ['H12', 'H12']
 }
 
 
@@ -43,19 +43,18 @@ def run(protocol):
 
 def _setup(protocol):
     '''Setup.'''
+    assert len(_SAMPLE_PLATE['last']) < 3
+
     # Add temp deck:
     therm_mod = protocol.load_module('thermocycler', 7)
     therm_mod.open_lid()
     therm_mod.set_block_temperature(4)
     therm_mod.set_lid_temperature(105)
 
-    temp_deck = protocol.load_module('tempdeck', 4)
-    temp_deck.set_temperature(4)
-
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3]]
+         for slot in [3, 6, 9]]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
@@ -65,10 +64,18 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')]
-    therm_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
+    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 2, 'RNA')]
+    dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
 
-    return therm_mod, p10_multi, reag_plt, src_plts, therm_plts
+    if len(_SAMPLE_PLATE['last']) == 2:
+        src_plts.append(protocol.load_labware(_SAMPLE_PLATE['type'], 1, 'RNA'))
+
+        temp_deck = protocol.load_module('tempdeck', 4)
+        temp_deck.set_temperature(4)
+
+        dst_plts.append(temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA2'))
+
+    return therm_mod, p10_multi, reag_plt, src_plts, dst_plts
 
 
 def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plts, dst_plts):
@@ -92,8 +99,11 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plts, dst_plts):
     therm_mod.open_lid()
 
     # Add RT reaction mix:
+    print([rack.next_tip() for rack in p10_multi.tip_racks])
+
     protocol.comment('\nAdd RT reaction mix')
-    _transfer_reagent(p10_multi, reag_plt, dst_plts, 1, 'rt_reaction_mix', 7.0)
+    _distribute_reagent(p10_multi, reag_plt, dst_plts, [1], 'rt_reaction_mix',
+                        7.0)
 
     # Incubate at 42C for 10 minute:
     therm_mod.close_lid()
@@ -204,7 +214,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return [int(well[1]) for well in _SAMPLE_PLATE['last']]
+    return [int(well[1:]) for well in _SAMPLE_PLATE['last']]
 
 
 def _get_plate_well(reag_plt, reagent):
