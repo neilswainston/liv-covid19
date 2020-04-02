@@ -18,6 +18,8 @@ import pandas as pd
 def run(in_filename, out_dir):
     '''run.'''
     in_df = pd.read_csv(in_filename, header=None)
+    in_df.dropna(axis=0, how='any', inplace=True)
+    in_df.dropna(axis=1, how='any', inplace=True)
     in_df.index = [val + 1 for val in range(len(in_df))]
     in_df.columns = [val + 1 for val in range(len(in_df.columns))]
 
