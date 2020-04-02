@@ -17,11 +17,13 @@ import pandas as pd
 
 def run(in_filename, out_dir):
     '''run.'''
-    in_df = pd.read_csv(in_filename, header=None)
-    in_df.dropna(axis=0, how='any', inplace=True)
-    in_df.dropna(axis=1, how='any', inplace=True)
-    in_df.index = [val + 1 for val in range(len(in_df))]
-    in_df.columns = [val + 1 for val in range(len(in_df.columns))]
+    in_df = _get_data(in_filename)
+
+    # Convert to vol required for 50ng:
+    in_df = 50 / in_df
+
+    # Check validity:
+    assert in_df.max().max() < 12.5
 
     mantis_df = 12.5 - in_df
 
@@ -38,6 +40,16 @@ def run(in_filename, out_dir):
     # Write Mantis plate:
     mosquito_df.to_csv(os.path.join(out_dir, 'mosquito.csv'),
                        index=False)
+
+
+def _get_data(in_filename):
+    '''Get data.'''
+    in_df = pd.read_csv(in_filename, header=None)
+    in_df.dropna(axis=0, how='any', inplace=True)
+    in_df.dropna(axis=1, how='any', inplace=True)
+    in_df.index = [val + 1 for val in range(len(in_df))]
+    in_df.columns = [val + 1 for val in range(len(in_df.columns))]
+    return in_df
 
 
 def _get_mosquito(in_df):
