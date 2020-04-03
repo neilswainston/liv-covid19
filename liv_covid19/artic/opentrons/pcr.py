@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H6', 'H6']
+    'last': ['H12']
 }
 
 _MAG_PLATE = {
@@ -39,14 +39,14 @@ _MAG_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, p300_multi, reag_plt, src_plts, therm_plts = \
+    therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dst_plts = \
         _setup(protocol)
 
     therm_mod.set_block_temperature(4)
 
     # PCR:
     _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
-         therm_plts)
+         dst_plts)
 
 
 def _setup(protocol):
@@ -63,11 +63,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3]]
+         for slot in [1]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [6, 9]]
+         for slot in [2]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -81,9 +81,13 @@ def _setup(protocol):
 
     # Add source and thermo plates:
     src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
-    therm_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
+    dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
 
-    return therm_mod, p10_multi, p300_multi, reag_plt, src_plts, therm_plts
+    if _get_num_cols()[0] > 6:
+        dst_plts.append(
+            protocol.load_labware(_SAMPLE_PLATE['type'], 9, 'PCR2'))
+
+    return therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dst_plts
 
 
 def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
@@ -97,11 +101,13 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
     prev_aspirate, _, _ = _set_flow_rate(protocol, p300_multi, aspirate=50)
 
     # Add Pool A:
-    _distribute_reagent(p300_multi, reag_plt, dst_plts, [1],
+    _distribute_reagent(p300_multi, reag_plt, dst_plts[0],
+                        [1],
                         'primer_pool_a_mastermix', 22.5, bottom=1.5)
 
     # Add Pool B:
-    _distribute_reagent(p300_multi, reag_plt, dst_plts, [7],
+    _distribute_reagent(p300_multi, reag_plt, dst_plts[-1],
+                        [7 if len(dst_plts) == 1 else 1],
                         'primer_pool_b_mastermix', 22.5, bottom=1.5)
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
@@ -109,16 +115,24 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
     # Add samples to each pool:
     protocol.comment('\nSplit samples into pools A and B')
 
-    for plt_idx, (src_plt, dst_plt) in enumerate(zip(src_plts, dst_plts)):
-        for col_idx in range(_get_num_cols()[plt_idx]):
-            p10_multi.distribute(
-                2.5,
-                src_plt.columns()[col_idx],
-                [dst_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
-                mix_after=(3, 2.5),
-                disposal_volume=0)
+    for col_idx in range(_get_num_cols()[0]):
+        dst_cols = [dst_plts[0].columns()[col_idx]]
+
+        if len(dst_plts) == 1:
+            dst_cols.extend([dst_plts[0].columns()[col_idx + 6]])
+        else:
+            dst_cols.extend([dst_plts[1].columns()[col_idx]])
+
+        p10_multi.distribute(
+            2.5,
+            src_plts[0].columns()[col_idx],
+            dst_cols,
+            mix_after=(3, 2.5),
+            disposal_volume=0)
 
     # PCR:
+    protocol.pause()
+
     protocol.comment('\nPerform PCR')
     _do_pcr(therm_mod)
 
@@ -153,7 +167,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plts, dst_cols, reagent, vol,
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
                         top=None, bottom=None):
     '''Distribute reagent.'''
@@ -163,11 +177,10 @@ def _distribute_reagent(pipette, reag_plt, dst_plts, dst_cols, reagent, vol,
 
     dest_cols = []
 
-    for idx, dst_plt in enumerate(dst_plts):
-        for dst_col in dst_cols:
-            dest_cols.extend(
-                dst_plt.rows_by_name()['A'][
-                    dst_col - 1:dst_col - 1 + _get_num_cols()[idx]])
+    for dst_col in dst_cols:
+        dest_cols.extend(
+            dst_plt.rows_by_name()['A'][
+                dst_col - 1:dst_col - 1 + _get_num_cols()[0]])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],

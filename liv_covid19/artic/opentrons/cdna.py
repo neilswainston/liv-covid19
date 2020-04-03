@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H12', 'H12']
+    'last': ['H12']
 }
 
 
@@ -45,7 +45,6 @@ def run(protocol):
 
 def _setup(protocol):
     '''Setup.'''
-    assert len(_SAMPLE_PLATE['last']) < 3
 
     # Add temp deck:
     therm_mod = protocol.load_module('thermocycler', 7)
@@ -53,10 +52,13 @@ def _setup(protocol):
     therm_mod.set_block_temperature(4)
     therm_mod.set_lid_temperature(105)
 
+    temp_deck = protocol.load_module('tempdeck', 4)
+    temp_deck.set_temperature(4)
+
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [3, 6, 9]]
+         for slot in [1, 2]]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
@@ -66,19 +68,8 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 2, 'RNA')]
+    src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')]
     dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
-
-    if len(_SAMPLE_PLATE['last']) == 2:
-        src_plts.append(protocol.load_labware(
-            _SAMPLE_PLATE['type'], 1, 'RNA2'))
-
-        temp_deck = protocol.load_module('tempdeck', 4)
-        temp_deck.set_temperature(4)
-
-        dst_plts.append(temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA2'))
-    else:
-        temp_deck = None
 
     return therm_mod, temp_deck, p10_multi, reag_plt, src_plts, dst_plts
 
