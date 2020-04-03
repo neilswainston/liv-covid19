@@ -10,6 +10,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 # pylint: disable=invalid-name
 # pylint: disable=protected-access
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 import os.path
 
 from opentrons import simulate
@@ -236,10 +237,9 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
-        # TODO: vol + air_gap > p300_multi.max_volume,
-        # therefore air_gap cannot be set.
-        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 200,
-                            return_tip=count == 0, air_gap=0, top=0)
+        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 150,
+                            return_tip=count == 0, air_gap=air_gap, top=0,
+                            blow_out=True)
 
         protocol.delay(seconds=17)
 
@@ -255,7 +255,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     # Resuspend in water:
     protocol.comment('\nResuspend in water')
-    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 15)
+    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 20,
+                      mix_after=(10, 20))
 
     # Incubate:
     protocol.delay(minutes=2)
@@ -316,7 +317,8 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, air_gap=0):
             waste_plt[waste].top(),
             trash=False,
             disposal_volume=0,
-            air_gap=air_gap)
+            air_gap=air_gap,
+            blow_out=True)
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
@@ -334,7 +336,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
-                        top=None, bottom=None):
+                        top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -356,7 +358,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                        new_tip='never',
                        disposal_volume=0,
                        mix_before=mix_before,
-                       air_gap=air_gap)
+                       air_gap=air_gap,
+                       blow_out=blow_out)
 
     if return_tip:
         pipette.return_tip()
@@ -364,15 +367,19 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
         pipette.drop_tip()
 
 
-def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
+def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
+                      mix_after=None):
     '''Transfer reagent.'''
+    if not mix_after:
+        mix_after = (3, vol)
+
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + _get_num_cols()]:
         pipette.transfer(vol,
                          reag_plt[reag_well],
                          dst,
-                         mix_after=(3, vol),
+                         mix_after=mix_after,
                          disposal_volume=0)
 
 
