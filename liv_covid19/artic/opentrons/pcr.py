@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H6']
+    'last': ['H6', 'H6']
 }
 
 _MAG_PLATE = {
