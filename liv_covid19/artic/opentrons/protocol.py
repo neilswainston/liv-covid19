@@ -27,9 +27,11 @@ _REAGENT_PLATE = {
                    'primer_pool_a_mastermix': 'A3',
                    'primer_pool_b_mastermix': 'A4',
                    'beads': 'A5',
-                   'ethanol': 'A6',
-                   'water': 'A7',
-                   'waste': 'A12'}
+                   'ethanol_1': 'A6',
+                   'ethanol_2': 'A7',
+                   'water': 'A8',
+                   'waste_1': 'A11',
+                   'waste_2': 'A12'}
 }
 
 _SAMPLE_PLATE = {
@@ -229,7 +231,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     # Remove supernatant from magnetic beads:
     protocol.comment('\nRemove supernatant')
-    _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip)
+    _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip, dest='waste_1')
 
     # Wash twice with ethanol:
     air_gap = p300_multi.max_volume * 0.1
@@ -237,7 +239,9 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
-        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'ethanol', 150,
+        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1],
+                            'ethanol_%i' % (count + 1),
+                            150,
                             return_tip=count == 0, air_gap=air_gap, top=0,
                             blow_out=True)
 
@@ -245,7 +249,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
         _to_waste(p300_multi, dst_plt, reag_plt, 250, dirty_tip,
-                  air_gap=air_gap)
+                  air_gap=air_gap,
+                  dest='waste_%i' % (count + 1))
 
     # Dry:
     protocol.delay(seconds=30)
@@ -303,9 +308,9 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, air_gap=0):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
     '''Move to waste.'''
-    _, waste = _get_plate_well(waste_plt, 'waste')
+    _, waste = _get_plate_well(waste_plt, dest)
 
     tip = start_tip
     p300_multi.starting_tip = tip
