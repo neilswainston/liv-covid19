@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H12']
+    'last': 'H12'
 }
 
 _MAG_PLATE = {
@@ -39,13 +39,13 @@ _MAG_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dst_plts = \
+    therm_mod, p10_multi, p300_multi, reag_plt, src_plt, dst_plts = \
         _setup(protocol)
 
     therm_mod.set_block_temperature(4)
 
     # PCR:
-    _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
+    _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
          dst_plts)
 
 
@@ -62,12 +62,10 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_10 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [1]]
+        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 1)]
 
     tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [2]]
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 2)]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -80,17 +78,17 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plts = [temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'cDNA')
     dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
 
-    if _get_num_cols()[0] > 6:
+    if _get_num_cols() > 6:
         dst_plts.append(
             protocol.load_labware(_SAMPLE_PLATE['type'], 9, 'PCR2'))
 
-    return therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dst_plts
+    return therm_mod, p10_multi, p300_multi, reag_plt, src_plt, dst_plts
 
 
-def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
+def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
          dst_plts):
     '''Do PCR.'''
     protocol.comment('\nSetup PCR')
@@ -115,7 +113,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
     # Add samples to each pool:
     protocol.comment('\nSplit samples into pools A and B')
 
-    for col_idx in range(_get_num_cols()[0]):
+    for col_idx in range(_get_num_cols()):
         dst_cols = [dst_plts[0].columns()[col_idx]]
 
         if len(dst_plts) == 1:
@@ -125,7 +123,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
 
         p10_multi.distribute(
             2.5,
-            src_plts[0].columns()[col_idx],
+            src_plt.columns()[col_idx],
             dst_cols,
             mix_after=(3, 2.5),
             disposal_volume=0)
@@ -180,7 +178,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
     for dst_col in dst_cols:
         dest_cols.extend(
             dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + _get_num_cols()[0]])
+                dst_col - 1:dst_col - 1 + _get_num_cols()])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
@@ -226,7 +224,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return [int(well[1:]) for well in _SAMPLE_PLATE['last']]
+    return int(_SAMPLE_PLATE['last'][1:])
 
 
 def _get_plate_well(reag_plt, reagent):
