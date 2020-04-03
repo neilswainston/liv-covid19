@@ -40,7 +40,7 @@ _SAMPLE_PLATE = {
 }
 
 _MAG_PLATE = {
-    'type': '4ti_96_wellplate_350ul'
+    'type': '4titude_96_wellplate_200ul'
 }
 
 
