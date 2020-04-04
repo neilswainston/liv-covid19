@@ -22,10 +22,8 @@ metadata = {'apiLevel': '2.1',
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
-    'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2',
-                   'primer_pool_a_mastermix': 'A3',
-                   'primer_pool_b_mastermix': 'A4',
+    'components': {'barcodes': 'A1',
+                   'ligation_mastermix': 'A2',
                    'beads': 'A5',
                    'ethanol_1': 'A6',
                    'ethanol_2': 'A7',
@@ -40,18 +38,27 @@ _SAMPLE_PLATE = {
 
 _DNA_VOLS = {
     'A1': 10,
-    'B1': 1
+    'H6': 1
 }
 
 
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_single, p300_multi, reag_plt, src_plt, therm_plt = \
+    therm_mod, p10_single, p10_multi, reag_plt, src_plt, dst_plt = \
         _setup(protocol)
 
     # Normalise DNA concentrations:
-    _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, therm_plt)
+    _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, dst_plt)
+
+    protocol.pause(msg='''
+    Move normalised DNA plate from PCR machine to thermo block.
+    Place new, empty PCR plate into PCR machine.
+    Press Continue.''')
+
+    # Barcode ligation:
+    _barcode(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
+             dst_plt)
 
 
 def _setup(protocol):
@@ -70,16 +77,12 @@ def _setup(protocol):
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
          for slot in [2, 3]]
 
-    tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [6, 9]]
-
     # Add pipettes:
     p10_single = protocol.load_instrument(
         'p10_single', 'left', tip_racks=tip_racks_10)
 
     p300_multi = protocol.load_instrument(
-        'p300_multi', 'right', tip_racks=tip_racks_200)
+        'p300_multi', 'right', tip_racks=tip_racks_10)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -114,6 +117,43 @@ def _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, dst_plt):
         [src_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
         [dst_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
         disposal_volume=0)
+
+    # Incubate at 20C for 5 minute:
+    therm_mod.close_lid()
+    _incubate(therm_mod, 20, 5, lid_temp=105)
+
+    # Incubate at 65C for 5 minute:
+    _incubate(therm_mod, 65, 5, lid_temp=105)
+    therm_mod.open_lid()
+
+
+def _barcode(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
+             dst_plt):
+    '''Barcode.'''
+    protocol.comment('\nBarcode samples')
+
+    # Add water:
+    protocol.comment('\nAdd water')
+
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'water', 5.5,
+                        return_tip=True)
+
+    # Add DNA:
+    protocol.comment('\nAdd DNA')
+
+    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 1.5)
+
+    # Add barcodes:
+    protocol.comment('\nAdd barcodes')
+
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'barcodes', 2.5,
+                        top=0)
+
+    # Add ligation mastermix:
+    protocol.comment('\nAdd ligation mastermix')
+
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1],
+                        'ligation_mastermix', 10, top=0)
 
     # Incubate at 20C for 5 minute:
     therm_mod.close_lid()
@@ -241,7 +281,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_DNA_VOLS.keys()[-1][1])
+    return int(list(_DNA_VOLS.keys())[-1][1])
 
 
 def _get_plate_well(reag_plt, reagent):
