@@ -213,7 +213,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     # Add beads:
     protocol.comment('\nAdd beads')
     _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'beads', 50,
-                        return_tip=True, mix_before=(3, 200))
+                        return_tip=True)
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
