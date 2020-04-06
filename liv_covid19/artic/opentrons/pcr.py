@@ -31,10 +31,6 @@ _SAMPLE_PLATE = {
     'last': 'H12'
 }
 
-_MAG_PLATE = {
-    'type': '4ti_96_wellplate_350ul'
-}
-
 
 def run(protocol):
     '''Run protocol.'''
@@ -62,7 +58,7 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_10 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 1)]
+        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 3)]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', 2)]
