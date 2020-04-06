@@ -35,12 +35,10 @@ _SAMPLE_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, temp_deck, p10_multi, reag_plt, src_plt, dst_plt = \
-        _setup(protocol)
+    therm_mod, p10_multi, reag_plt, src_plt, dst_plt = _setup(protocol)
 
     # cDNA:
-    _cdna(
-        protocol, therm_mod, temp_deck, p10_multi, reag_plt, src_plt, dst_plt)
+    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
 
 def _setup(protocol):
@@ -58,7 +56,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [1, 2]]
+         for slot in [2, 3]]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
@@ -71,10 +69,10 @@ def _setup(protocol):
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')
     dst_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')
 
-    return therm_mod, temp_deck, p10_multi, reag_plt, src_plt, dst_plt
+    return therm_mod, p10_multi, reag_plt, src_plt, dst_plt
 
 
-def _cdna(protocol, therm_mod, temp_deck, p10_multi, reag_plt, src_plt,
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
           dst_plt):
     '''Generate cDNA.'''
     protocol.comment('\nGenerate cDNA')
@@ -89,10 +87,10 @@ def _cdna(protocol, therm_mod, temp_deck, p10_multi, reag_plt, src_plt,
 
     # Incubate at 65C for 5 minute:
     therm_mod.close_lid()
-    _incubate(therm_mod, temp_deck, 65, 5, lid_temp=105)
+    _incubate(therm_mod, 65, 5, lid_temp=105)
 
     # Incubate (on ice) / at min temp for 1 minute:
-    _incubate(therm_mod, temp_deck, 8, 1)
+    _incubate(therm_mod, 8, 1)
     therm_mod.open_lid()
 
     # Add RT reaction mix:
@@ -102,23 +100,21 @@ def _cdna(protocol, therm_mod, temp_deck, p10_multi, reag_plt, src_plt,
 
     # Incubate at 42C for 10 minute:
     therm_mod.close_lid()
-    _incubate(therm_mod, temp_deck, 42, 50, lid_temp=105)
+    _incubate(therm_mod, 42, 50, lid_temp=105)
 
     # Incubate at 70C for 10 minute:
-    _incubate(therm_mod, temp_deck, 70, 10, lid_temp=105)
+    _incubate(therm_mod, 70, 10, lid_temp=105)
 
     # Incubate at 4C for 1 minute:
-    _incubate(therm_mod, temp_deck, 8, 1, lid_temp=105)
+    _incubate(therm_mod, 8, 1, lid_temp=105)
     therm_mod.open_lid()
 
 
-def _incubate(therm_mod, temp_deck, block_temp, minutes, seconds=0,
+def _incubate(therm_mod, block_temp, minutes, seconds=0,
               lid_temp=None):
     '''Incubate.'''
     if lid_temp and therm_mod.lid_temperature != lid_temp:
         therm_mod.set_lid_temperature(lid_temp)
-
-    temp_deck.set_temperature(block_temp)
 
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
