@@ -110,12 +110,10 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     protocol.comment('\nSplit samples into pools A and B')
 
     for col_idx in range(_get_num_cols()):
-        dst_cols = [dst_plts[0].columns()[col_idx]]
-
-        if len(dst_plts) == 1:
-            dst_cols.extend([dst_plts[0].columns()[col_idx + 6]])
-        else:
-            dst_cols.extend([dst_plts[1].columns()[col_idx]])
+        plt_idx = col_idx // 6
+        # print(plt_idx, col_idx, dst_plts[plt_idx])
+        dst_cols = [dst_plts[plt_idx].columns()[col_idx % 6]] + \
+                   [dst_plts[plt_idx].columns()[col_idx % 6 + 6]]
 
         p10_multi.distribute(
             2.5,
