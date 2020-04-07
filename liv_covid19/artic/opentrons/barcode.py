@@ -21,17 +21,12 @@ metadata = {'apiLevel': '2.1',
             'description': 'simple'}
 
 _REAGENT_PLATE = {
-    'type': 'nest_12_reservoir_15ml',
+    'type': '4titude_96_wellplate_200ul',
     'components': {'barcodes_1': 'A1',
                    'barcodes_2': 'A2',
                    'barcodes_3': 'A3',
                    'ligation_mastermix': 'A4',
-                   'beads': 'A5',
-                   'ethanol_1': 'A6',
-                   'ethanol_2': 'A7',
-                   'water': 'A8',
-                   'waste_1': 'A11',
-                   'waste_2': 'A12'}
+                   'water': 'A8'}
 }
 
 _SAMPLE_PLATE = {
@@ -39,8 +34,8 @@ _SAMPLE_PLATE = {
 }
 
 _DNA_VOLS = {
-    'A1': 10,
-    'H6': 1
+    'A1': 3,
+    'H12': 1
 }
 
 
@@ -70,8 +65,8 @@ def _setup(protocol):
          for slot in [2, 3]]
 
     # Add pipettes:
-    p300_multi = protocol.load_instrument(
-        'p300_multi', 'right', tip_racks=tip_racks_10)
+    p10_multi = protocol.load_instrument(
+        'p10_multi', 'left', tip_racks=tip_racks_10)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -80,7 +75,7 @@ def _setup(protocol):
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'src_plt')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'dst_plt')
 
-    return therm_mod, p300_multi, reag_plt, src_plt, therm_plt
+    return therm_mod, p10_multi, reag_plt, src_plt, therm_plt
 
 
 def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
@@ -93,11 +88,6 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'water', 5.5,
                         return_tip=True)
 
-    # Add DNA:
-    protocol.comment('\nAdd DNA')
-
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 1.5)
-
     # Add barcodes:
     protocol.comment('\nAdd barcodes')
 
@@ -106,6 +96,11 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
 
         _distribute_barcodes(p10_multi, reag_plt, dst_plt, col_idxs,
                              'barcodes_%i' % (barcode_idx + 1), 2.5)
+
+    # Add DNA:
+    protocol.comment('\nAdd DNA')
+
+    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 1.5)
 
     # Add ligation mastermix:
     protocol.comment('\nAdd ligation mastermix')
@@ -257,7 +252,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(list(_DNA_VOLS.keys())[-1][1])
+    return int(list(_DNA_VOLS.keys())[-1][1:])
 
 
 def _get_plate_well(reag_plt, reagent):
