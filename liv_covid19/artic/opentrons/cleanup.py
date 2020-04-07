@@ -155,12 +155,12 @@ def _cleanup_pool(p300_multi, src_plt, dst_plt):
     start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
     tip = start_tip
 
-    for col_idx in range(_get_num_cols()):
+    for col_idx in range(int(_get_num_cols() // 2)):
         p300_multi.consolidate(
             25,
             [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
             dst_plt.columns()[col_idx],
-            mix_after=(3, 25.0),
+            mix_after=(3, 50.0),
             trash=False,
             disposal_volume=0)
 
@@ -287,7 +287,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE['last'][1])
+    return int(_SAMPLE_PLATE['last'][1:])
 
 
 def _get_plate_well(reag_plt, reagent):
