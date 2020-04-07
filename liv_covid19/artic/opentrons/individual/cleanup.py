@@ -71,8 +71,8 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'src_plt')
-    mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'dst_plt')
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR')
+    mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'PCR_clean')
 
     return mag_deck, p300_multi, reag_plt, src_plt, mag_plt
 

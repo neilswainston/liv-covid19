@@ -26,7 +26,7 @@ _REAGENT_PLATE = {
                    'barcodes_2': 'A2',
                    'barcodes_3': 'A3',
                    'ligation_mastermix': 'A4',
-                   'water': 'A8'}
+                   'water': 'A5'}
 }
 
 _SAMPLE_PLATE = {
@@ -72,8 +72,8 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'src_plt')
-    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'dst_plt')
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR_normal')
+    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR_barcode')
 
     return therm_mod, p10_multi, reag_plt, src_plt, therm_plt
 
@@ -116,6 +116,9 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _incubate(therm_mod, 65, 5, lid_temp=105)
     therm_mod.open_lid()
 
+    # TODO: pool
+    _pool()
+
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     '''Incubate.'''
@@ -125,27 +128,6 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
                                     hold_time_seconds=seconds)
-
-
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
-    '''Move to waste.'''
-    _, waste = _get_plate_well(waste_plt, dest)
-
-    tip = start_tip
-    p300_multi.starting_tip = tip
-
-    for col_idx in range(_get_num_cols()):
-        p300_multi.transfer(
-            vol,
-            src_plt.columns()[col_idx],
-            waste_plt[waste].top(),
-            trash=False,
-            disposal_volume=0,
-            air_gap=air_gap,
-            blow_out=True)
-
-        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p300_multi.starting_tip = tip
 
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
@@ -207,47 +189,6 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
         pipette.return_tip()
     else:
         pipette.drop_tip()
-
-
-def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
-                      mix_after=None):
-    '''Transfer reagent.'''
-    if not mix_after:
-        mix_after = (3, vol)
-
-    _, reag_well = _get_plate_well(reag_plt, reagent)
-
-    for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + _get_num_cols()]:
-        pipette.transfer(vol,
-                         reag_plt[reag_well],
-                         dst,
-                         mix_after=mix_after,
-                         disposal_volume=0)
-
-
-def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
-                   blow_out=None):
-    '''Set flow rates.'''
-    old_aspirate = pipette.flow_rate.aspirate
-    old_dispense = pipette.flow_rate.dispense
-    old_blow_out = pipette.flow_rate.blow_out
-
-    if aspirate and aspirate != old_aspirate:
-        protocol.comment('Updating aspirate from %i to %i'
-                         % (old_aspirate, aspirate))
-        pipette.flow_rate.aspirate = aspirate
-
-    if dispense and dispense != old_dispense:
-        protocol.comment('Updating dispense from %i to %i'
-                         % (old_dispense, dispense))
-        pipette.flow_rate.dispense = dispense
-
-    if blow_out and blow_out != old_blow_out:
-        protocol.comment('Updating blow_out from %i to %i'
-                         % (old_blow_out, blow_out))
-        pipette.flow_rate.blow_out = blow_out
-
-    return old_aspirate, old_dispense, old_blow_out
 
 
 def _get_num_cols():
