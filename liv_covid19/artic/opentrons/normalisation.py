@@ -22,16 +22,8 @@ metadata = {'apiLevel': '2.1',
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
-    'components': {'barcodes_1': 'A1',
-                   'barcodes_2': 'A2',
-                   'barcodes_3': 'A3',
-                   'ligation_mastermix': 'A4',
-                   'beads': 'A5',
-                   'ethanol_1': 'A6',
-                   'ethanol_2': 'A7',
-                   'water': 'A8',
-                   'waste_1': 'A11',
-                   'waste_2': 'A12'}
+    'components': {'water': 'A8',
+                   'endprep_mastermix': 'A9'}
 }
 
 _SAMPLE_PLATE = {
@@ -47,10 +39,12 @@ _DNA_VOLS = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_single, reag_plt, src_plt, dst_plt = _setup(protocol)
+    therm_mod, p10_single, p10_multi, reag_plt, src_plt, dst_plt = \
+        _setup(protocol)
 
     # Normalise DNA concentrations:
-    _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, dst_plt)
+    _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
+               dst_plt)
 
 
 def _setup(protocol):
@@ -73,6 +67,10 @@ def _setup(protocol):
     p10_single = protocol.load_instrument(
         'p10_single', 'left', tip_racks=tip_racks_10)
 
+    # Add pipette:
+    p10_multi = protocol.load_instrument(
+        'p10_multi', 'right', tip_racks=tip_racks_10)
+
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
@@ -80,12 +78,18 @@ def _setup(protocol):
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'src_plt')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'dst_plt')
 
-    return therm_mod, p10_single, reag_plt, src_plt, therm_plt
+    return therm_mod, p10_single, p10_multi, reag_plt, src_plt, therm_plt
 
 
-def _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, dst_plt):
+def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
+               dst_plt):
     '''Generate cDNA.'''
     protocol.comment('\nNormalise DNA concentrations')
+
+    # Add endprep mastermix:
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1],
+                        'endprep_mastermix', 7.5,
+                        return_tip=True)
 
     # Add water:
     _, reag_well = _get_plate_well(reag_plt, 'water')
@@ -93,7 +97,7 @@ def _normalise(protocol, therm_mod, p10_single, reag_plt, src_plt, dst_plt):
     protocol.comment('\nAdd water')
 
     p10_single.distribute(
-        [12.5 - vol for vol in _DNA_VOLS.values()],
+        [7.5 - vol for vol in _DNA_VOLS.values()],
         reag_plt[reag_well],
         [dst_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
         disposal_volume=0)
@@ -124,6 +128,43 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
                                     hold_time_seconds=seconds)
+
+
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
+                        return_tip=False, mix_before=None, air_gap=0,
+                        top=None, bottom=None):
+    '''Distribute reagent.'''
+    pipette.pick_up_tip()
+
+    _, reag_well = _get_plate_well(reag_plt, reagent)
+
+    dest_cols = []
+
+    for dst_col in dst_cols:
+        dest_cols.extend(
+            dst_plt.rows_by_name()['A'][
+                dst_col - 1:dst_col - 1 + _get_num_cols()])
+
+    pipette.distribute(vol,
+                       reag_plt.wells_by_name()[reag_well],
+                       [well.top(top) if top is not None
+                        else (well.bottom(bottom) if bottom is not None
+                              else well)
+                        for well in dest_cols],
+                       new_tip='never',
+                       disposal_volume=0,
+                       mix_before=mix_before,
+                       air_gap=air_gap)
+
+    if return_tip:
+        pipette.return_tip()
+    else:
+        pipette.drop_tip()
+
+
+def _get_num_cols():
+    '''Get number of sample columns.'''
+    return int(list(_DNA_VOLS.keys())[-1][1:])
 
 
 def _get_plate_well(reag_plt, reagent):
