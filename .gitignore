@@ -132,3 +132,4 @@ dmypy.json
 /.pydevproject
 /**/.DS_Store
 /out/
+/liv_covid19/artic/opentrons/legacy
