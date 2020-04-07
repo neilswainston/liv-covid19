@@ -31,7 +31,7 @@ _SAMPLE_PLATE = {
 }
 
 _DNA_VOLS = {
-    'A1': 10,
+    'A1': 3,
     'H12': 1
 }
 
@@ -91,25 +91,15 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
                         'endprep_mastermix', 7.5,
                         return_tip=True)
 
-    # Add water:
+    # Add water and DNA:
     _, reag_well = _get_plate_well(reag_plt, 'water')
 
-    protocol.comment('\nAdd water')
+    protocol.comment('\nAdd water and DNA')
 
-    p10_single.distribute(
-        [7.5 - vol for vol in _DNA_VOLS.values()],
-        reag_plt[reag_well],
-        [dst_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
-        disposal_volume=0)
-
-    # Add DNA:
-    protocol.comment('\nAdd DNA')
-
-    p10_single.transfer(
-        list(_DNA_VOLS.values()),
-        [src_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
-        [dst_plt.wells_by_name()[well_name] for well_name in _DNA_VOLS],
-        disposal_volume=0)
+    for well, vol in _DNA_VOLS.items():
+        p10_single.consolidate([7.5 - vol, vol],
+                               [reag_plt[reag_well], src_plt[well]],
+                               dst_plt[well])
 
     # Incubate at 20C for 5 minute:
     therm_mod.close_lid()
