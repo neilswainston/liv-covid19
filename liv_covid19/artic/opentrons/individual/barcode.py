@@ -33,6 +33,10 @@ _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
 }
 
+_POOL_PLATE = {
+    'type': 'opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap'
+}
+
 _DNA_VOLS = {
     'A1': 3,
     'H12': 1
@@ -42,10 +46,14 @@ _DNA_VOLS = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, reag_plt, src_plt, dst_plt = _setup(protocol)
+    therm_mod, p10_single, p10_multi, reag_plt, src_plt, dst_plt, pool_plt = \
+        _setup(protocol)
 
     # Barcode ligation:
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
+
+    # Pool barcodes:
+    _pool(protocol, p10_single, dst_plt, pool_plt)
 
 
 def _setup(protocol):
@@ -68,14 +76,19 @@ def _setup(protocol):
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 
+    p10_single = protocol.load_instrument(
+        'p10_single', 'right', tip_racks=tip_racks_10)
+
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR_normal')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR_barcode')
+    pool_plt = protocol.load_labware(_POOL_PLATE['type'], 6, 'barcode_pool')
 
-    return therm_mod, p10_multi, reag_plt, src_plt, therm_plt
+    return therm_mod, p10_single, p10_multi, reag_plt, src_plt, therm_plt, \
+        pool_plt
 
 
 def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
@@ -116,8 +129,18 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _incubate(therm_mod, 65, 5, lid_temp=105)
     therm_mod.open_lid()
 
-    # TODO: pool
-    _pool()
+
+def _pool(protocol, p10_single, src_plt, dst_plt):
+    '''Pool.'''
+    protocol.comment('\nPooling barcoded samples')
+
+    for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
+        p10_single.consolidate(20.0,
+                               [well
+                                for col in src_plt.columns()[
+                                    col_idx:col_idx + 3]
+                                for well in col],
+                               dst_plt.wells()[idx])
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
