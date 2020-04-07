@@ -98,7 +98,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
     _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'rt_reaction_mix',
                         7.0)
 
-    # Incubate at 42C for 10 minute:
+    # Incubate at 42C for 50 minute:
     therm_mod.close_lid()
     _incubate(therm_mod, 42, 50, lid_temp=105)
 
