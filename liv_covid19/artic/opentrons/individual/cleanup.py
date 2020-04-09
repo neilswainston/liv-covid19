@@ -32,7 +32,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': 'H12'
+    'last': ['H12', 'H12']
 }
 
 _MAG_PLATE = {
@@ -43,16 +43,22 @@ _MAG_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    mag_deck, p300_multi, reag_plt, src_plt, mag_plt = _setup(protocol)
+    mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt = \
+        _setup(protocol)
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, mag_plt,
-             engage_height=mag_plt._dimensions['zDimension'])
+    _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
+             clean_plt, engage_height=mag_plt._dimensions['zDimension'])
 
 
 def _setup(protocol):
     '''Setup.'''
     # Add temp deck:
+    therm_mod = protocol.load_module('thermocycler', 7)
+    therm_mod.open_lid()
+    therm_mod.set_block_temperature(4)
+    therm_mod.set_lid_temperature(105)
+
     temp_deck = protocol.load_module('tempdeck', 4)
     temp_deck.set_temperature(4)
 
@@ -71,25 +77,29 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR')
+    src_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
     mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'PCR_clean')
+    clean_plt = protocol.load_labware(_SAMPLE_PLATE['type'], 6, 'final_clean')
 
-    return mag_deck, p300_multi, reag_plt, src_plt, mag_plt
+    if len(_SAMPLE_PLATE['last']) > 1:
+        src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR2'))
+
+    return mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt
 
 
-def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
-             engage_height):
+def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
+             clean_plt, engage_height):
     '''Clean-up.'''
     protocol.comment('\nClean-up')
 
     # Add beads:
     protocol.comment('\nAdd beads')
-    _distribute_reagent(p300_multi, reag_plt, dst_plt, [1], 'beads', 50,
+    _distribute_reagent(p300_multi, reag_plt, mag_plt, [1], 'beads', 50,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
-    dirty_tip = _cleanup_pool(p300_multi, src_plt, dst_plt)
+    dirty_tip = _cleanup_pool(p300_multi, src_plts, mag_plt)
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -103,7 +113,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     # Remove supernatant from magnetic beads:
     protocol.comment('\nRemove supernatant')
-    _to_waste(p300_multi, dst_plt, reag_plt, 75, dirty_tip, dest='waste_1')
+    _to_waste(p300_multi, mag_plt, reag_plt, 75, dirty_tip, dest='waste_1')
 
     # Wash twice with ethanol:
     air_gap = p300_multi.max_volume * 0.1
@@ -111,7 +121,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
-        _distribute_reagent(p300_multi, reag_plt, dst_plt, [1],
+        _distribute_reagent(p300_multi, reag_plt, mag_plt, [1],
                             'ethanol_%i' % (count + 1),
                             150,
                             return_tip=count == 0, air_gap=air_gap, top=0,
@@ -120,7 +130,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
         protocol.delay(seconds=17)
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
-        _to_waste(p300_multi, dst_plt, reag_plt, 250, dirty_tip,
+        _to_waste(p300_multi, mag_plt, reag_plt, 250, dirty_tip,
                   air_gap=air_gap,
                   dest='waste_%i' % (count + 1))
 
@@ -132,7 +142,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
 
     # Resuspend in water:
     protocol.comment('\nResuspend in water')
-    _transfer_reagent(p300_multi, reag_plt, dst_plt, 1, 'water', 20,
+    _transfer_reagent(p300_multi, reag_plt, mag_plt, 1, 'water', 20,
                       mix_after=(10, 20))
 
     # Incubate:
@@ -142,30 +152,32 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plt, dst_plt,
     mag_deck.engage(height=engage_height)
     protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
 
-    # Transfer clean product to a new well (move from col 1 to col 7, etc.):
+    # Transfer clean product to a new plate:
     protocol.comment('\nTransfer clean product')
-    _transfer_samples(p300_multi, dst_plt, dst_plt, 1, 7, 15)
+    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 7, 15)
 
     # Disengage MagDeck:
     mag_deck.disengage()
 
 
-def _cleanup_pool(p300_multi, src_plt, dst_plt):
+def _cleanup_pool(p300_multi, src_plts, dst_plt):
     '''Cleanup pool A and B step.'''
     start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
     tip = start_tip
 
-    for col_idx in range(int(_get_num_cols() // 2)):
-        p300_multi.consolidate(
-            25,
-            [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
-            dst_plt.columns()[col_idx],
-            mix_after=(3, 50.0),
-            trash=False,
-            disposal_volume=0)
+    for src_plt_idx, (src_plt, num_cols) in \
+            enumerate(zip(src_plts, _get_num_cols())):
+        for col_idx in range(int(num_cols // 2)):
+            p300_multi.consolidate(
+                25,
+                [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
+                dst_plt.columns()[col_idx + (src_plt_idx * 6)],
+                mix_after=(3, 50.0),
+                trash=False,
+                disposal_volume=0)
 
-        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-        p300_multi.starting_tip = tip
+            tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+            p300_multi.starting_tip = tip
 
     return start_tip
 
@@ -187,7 +199,7 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
     tip = start_tip
     p300_multi.starting_tip = tip
 
-    for col_idx in range(_get_num_cols()):
+    for col_idx in range(sum(_get_num_cols()) // 2):
         p300_multi.transfer(
             vol,
             src_plt.columns()[col_idx],
@@ -203,12 +215,12 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     '''Transfer samples.'''
-    num_cols = _get_num_cols()
+    num_cols = sum(_get_num_cols()) // 2
 
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
+        pipette.transfer(vol, src, dst, disposal_volume=0)
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
@@ -224,7 +236,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
     for dst_col in dst_cols:
         dest_cols.extend(
             dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + _get_num_cols()])
+                dst_col - 1:dst_col - 1 + sum(_get_num_cols()) // 2])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
@@ -252,7 +264,8 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + _get_num_cols()]:
+    for dst in dst_plt.columns()[
+            dst_col - 1:dst_col - 1 + (sum(_get_num_cols()) // 2)]:
         pipette.transfer(vol,
                          reag_plt[reag_well],
                          dst,
@@ -287,7 +300,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE['last'][1:])
+    return [int(last[1:]) for last in _SAMPLE_PLATE['last']]
 
 
 def _get_plate_well(reag_plt, reagent):
