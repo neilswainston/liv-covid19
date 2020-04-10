@@ -30,10 +30,7 @@ _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
 }
 
-_DNA_VOLS = {
-    'A1': 3,
-    'H12': 1
-}
+_DNA_VOLS = {'A1': 3, 'H12': 1}
 
 
 def run(protocol):

@@ -37,10 +37,7 @@ _POOL_PLATE = {
     'type': 'opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap'
 }
 
-_DNA_VOLS = {
-    'A1': 3,
-    'H12': 1
-}
+_DNA_VOLS = {'A1': 3, 'H12': 1}
 
 
 def run(protocol):
