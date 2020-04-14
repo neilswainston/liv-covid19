@@ -19,20 +19,19 @@ def run(in_filename, out_dir):
     '''run.'''
     in_df = _get_data(in_filename)
 
+    # Check validity:
+    assert in_df.min().min() >= 50 / 7.5, \
+        'Invalid concentration(s) of < 6.67ul/ng detected'
+
     # Convert to vol required for 50ng:
     in_df = 50 / in_df
-
-    # Check validity:
-    assert in_df.max().max() <= 12.5
-
-    mantis_df = 12.5 - in_df
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
     # Write Mantis worklist:
-    mantis_df.to_csv(os.path.join(out_dir, 'mantis.csv'),
-                     index=False, header=False)
+    _get_mantis(in_df).to_csv(os.path.join(out_dir, 'mantis.csv'),
+                              index=False, header=False)
 
     # Get tabular data:
     tab_df = _to_tabular(in_df)
@@ -67,6 +66,11 @@ def _to_tabular(in_df):
             'Row': np.tile(np.asarray(in_df.index), k)}
 
     return pd.DataFrame(data, columns=['Column', 'Row', 'conc'])
+
+
+def _get_mantis(in_df):
+    '''Get Mantis worklist.'''
+    return 12.5 - in_df
 
 
 def _get_mosquito(tab_df, max_vol=12000):
