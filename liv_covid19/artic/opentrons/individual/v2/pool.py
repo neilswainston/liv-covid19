@@ -70,11 +70,12 @@ def _setup(protocol):
         'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add source, thermo and mag plates:
-    src_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
-    dest_plt = protocol.load_labware(_SAMPLE_PLATE['type'], 6, 'final_clean')
+    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 6, 'PCR')]
+    dest_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'final_clean')
 
     if len(_SAMPLE_PLATE['last']) > 1:
-        src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR2'))
+        src_plts.append(protocol.load_labware(
+            _SAMPLE_PLATE['type'], 9, 'PCR2'))
 
     return p300_multi, reag_plt, src_plts, dest_plt
 
