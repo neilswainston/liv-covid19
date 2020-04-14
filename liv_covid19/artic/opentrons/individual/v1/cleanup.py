@@ -99,7 +99,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
-    dirty_tip = _cleanup_pool(p300_multi, src_plts, mag_plt)
+    dirty_tip = _pool(p300_multi, src_plts, mag_plt)
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -160,8 +160,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
     mag_deck.disengage()
 
 
-def _cleanup_pool(p300_multi, src_plts, dst_plt):
-    '''Cleanup pool A and B step.'''
+def _pool(p300_multi, src_plts, dst_plt):
+    '''Pool A and B step.'''
     start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
     tip = start_tip
 
