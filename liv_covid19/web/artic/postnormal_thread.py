@@ -7,6 +7,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 
 @author: neilswainston
 '''
+# pylint: disable=broad-except
 import os.path
 import tempfile
 
@@ -31,21 +32,24 @@ class PostNormaliseThread(JobThread):
 
     def run(self):
         '''Run.'''
-        parent_dir = tempfile.mkdtemp()
-        iteration = 0
+        try:
+            parent_dir = tempfile.mkdtemp()
+            iteration = 0
 
-        self._fire_job_event('running', iteration, 'Running...')
+            self._fire_job_event('running', iteration, 'Running...')
 
-        postnormal.run(in_filename=self.__in_filename,
-                       out_dir=parent_dir)
+            postnormal.run(in_filename=self.__in_filename,
+                           out_dir=parent_dir)
 
-        iteration += 1
+            iteration += 1
 
-        if self._cancelled:
-            self._fire_job_event('cancelled', iteration,
-                                 message='Job cancelled')
-        else:
-            save_export(parent_dir, self.__out_dir, self._job_id)
-            self._result = self._job_id
-            self._fire_job_event('finished', iteration,
-                                 message='Job completed')
+            if self._cancelled:
+                self._fire_job_event('cancelled', iteration,
+                                     message='Job cancelled')
+            else:
+                save_export(parent_dir, self.__out_dir, self._job_id)
+                self._result = self._job_id
+                self._fire_job_event('finished', iteration,
+                                     message='Job completed')
+        except Exception as err:
+            self._fire_job_event('error', iteration, message=str(err))
