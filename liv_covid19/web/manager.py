@@ -12,7 +12,7 @@ import os.path
 from threading import Thread
 import time
 
-from liv_covid19.web import normal_thread
+from liv_covid19.web.artic import postnormal_thread
 
 
 class Manager():
@@ -75,8 +75,8 @@ class Manager():
         '''Get thread.'''
         app = query.get('app', 'undefined')
 
-        if app == 'Normalise':
-            return normal_thread.NormaliseThread(query, self.__out_dir)
+        if app == 'PostNormalise':
+            return postnormal_thread.PostNormaliseThread(query, self.__out_dir)
 
         raise ValueError('Unknown app: ' + app)
 

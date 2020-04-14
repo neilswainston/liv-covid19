@@ -4,13 +4,13 @@ livCovApp.config(function($routeProvider, $locationProvider) {
 	$routeProvider.when("/", {
 		controller: "livCovCtrl",
 		controllerAs: "ctrl",
-		templateUrl: "static/normalise/normalise.html",
-		app: "Normalise"
-	}).when("/normalise", {
+		templateUrl: "static/postNormalise/postNormalise.html",
+		app: "PostNormalise"
+	}).when("/postNormalise", {
 		controller: "livCovCtrl",
 		controllerAs: "ctrl",
-		templateUrl: "static/normalise/normalise.html",
-		app: "Normalise"
+		templateUrl: "static/postNormalise/postNormalise.html",
+		app: "PostNormalise"
 	})
 	
 	// Use the HTML5 History API:

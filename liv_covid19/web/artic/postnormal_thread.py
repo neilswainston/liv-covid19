@@ -10,12 +10,12 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 import os.path
 import tempfile
 
-from liv_covid19 import normal
+from liv_covid19.web.artic import postnormal
 from liv_covid19.web.job import JobThread, save_export
 
 
-class NormaliseThread(JobThread):
-    '''Runs an Normalise job.'''
+class PostNormaliseThread(JobThread):
+    '''Runs a PostNormalise job.'''
 
     def __init__(self, query, out_dir):
         self.__filename, suffix = os.path.splitext(query['file_name'])
@@ -36,8 +36,8 @@ class NormaliseThread(JobThread):
 
         self._fire_job_event('running', iteration, 'Running...')
 
-        normal.run(in_filename=self.__in_filename,
-                   out_dir=parent_dir)
+        postnormal.run(in_filename=self.__in_filename,
+                       out_dir=parent_dir)
 
         iteration += 1
 
