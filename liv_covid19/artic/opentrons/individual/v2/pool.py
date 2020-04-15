@@ -45,14 +45,16 @@ def run(protocol):
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
-    _pool(p10_multi, src_plts, dest_plt)
+    dirty_tip = _pool(p10_multi, src_plts, dest_plt)
+    p10_multi.starting_tip = dirty_tip
 
     # Add endprep mastermix:
     protocol.comment('\nAdd endprep mastermix')
     _distribute_reagent(p300_multi, reag_plt, therm_plt, [1],
-                        'endprep_mastermix', 10, return_tip=True)
+                        'endprep_mastermix', 10)
 
     # Add sample pools:
+    protocol.comment('\nAdd pooled samples')
     _transfer_samples(p10_multi, dest_plt, therm_plt, 1, 1, 5)
 
     # Incubate at 20C for 5 minute:
@@ -82,7 +84,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [1, 3]]
+         for slot in [3]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
@@ -123,12 +125,17 @@ def _pool(p10_multi, src_plts, dst_plt):
                 2.5,
                 [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
                 dst_plt.columns()[col_idx + (src_plt_idx * 6)],
-                mix_after=(3, 2.5),
+                mix_after=(3, 5),
                 trash=False,
                 disposal_volume=0)
 
-            tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-            p10_multi.starting_tip = tip
+            tip_idx = int(tip.display_name.split()[0][1:])
+
+            if tip_idx < len(tip.parent.rows_by_name()['A']):
+                tip = tip.parent.rows_by_name()['A'][tip_idx]
+                p10_multi.starting_tip = tip
+
+    return start_tip
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,

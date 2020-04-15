@@ -176,8 +176,11 @@ def _pool(p300_multi, src_plts, dst_plt):
                 trash=False,
                 disposal_volume=0)
 
-            tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
-            p300_multi.starting_tip = tip
+            tip_idx = int(tip.display_name.split()[0][1:])
+
+            if tip_idx < len(tip.parent.rows_by_name()['A']):
+                tip = tip.parent.rows_by_name()['A'][tip_idx]
+                p300_multi.starting_tip = tip
 
     return start_tip
 
