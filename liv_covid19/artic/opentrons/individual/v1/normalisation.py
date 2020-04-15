@@ -84,8 +84,7 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
 
     # Add endprep mastermix:
     _distribute_reagent(p10_multi, reag_plt, dst_plt, [1],
-                        'endprep_mastermix', 7.5,
-                        return_tip=True)
+                        'endprep_mastermix', 7.5)
 
     # Add water and DNA:
     _, reag_well = _get_plate_well(reag_plt, 'water')
@@ -95,7 +94,8 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
     for well, vol in _DNA_VOLS.items():
         p10_single.consolidate([7.5 - vol, vol],
                                [reag_plt[reag_well], src_plt[well]],
-                               dst_plt[well])
+                               dst_plt[well],
+                               mix_after=(3, 7.5))
 
     # Incubate at 20C for 5 minute:
     therm_mod.close_lid()
@@ -103,6 +103,8 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
 
     # Incubate at 65C for 5 minute:
     _incubate(therm_mod, 65, 5, lid_temp=105)
+
+    therm_mod.set_block_temperature(4)
     therm_mod.open_lid()
 
 

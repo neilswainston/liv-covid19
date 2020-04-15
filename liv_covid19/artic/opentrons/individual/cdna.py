@@ -178,31 +178,6 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
                          disposal_volume=0)
 
 
-def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
-                   blow_out=None):
-    '''Set flow rates.'''
-    old_aspirate = pipette.flow_rate.aspirate
-    old_dispense = pipette.flow_rate.dispense
-    old_blow_out = pipette.flow_rate.blow_out
-
-    if aspirate and aspirate != old_aspirate:
-        protocol.comment('Updating aspirate from %i to %i'
-                         % (old_aspirate, aspirate))
-        pipette.flow_rate.aspirate = aspirate
-
-    if dispense and dispense != old_dispense:
-        protocol.comment('Updating dispense from %i to %i'
-                         % (old_dispense, dispense))
-        pipette.flow_rate.dispense = dispense
-
-    if blow_out and blow_out != old_blow_out:
-        protocol.comment('Updating blow_out from %i to %i'
-                         % (old_blow_out, blow_out))
-        pipette.flow_rate.blow_out = blow_out
-
-    return old_aspirate, old_dispense, old_blow_out
-
-
 def _get_num_cols():
     '''Get number of sample columns.'''
     return int(_SAMPLE_PLATE['last'][1:])

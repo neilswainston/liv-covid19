@@ -131,8 +131,9 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
         _to_waste(p300_multi, mag_plt, reag_plt, 250, dirty_tip,
-                  air_gap=air_gap,
-                  dest='waste_%i' % (count + 1))
+                  # air_gap=air_gap,
+                  dest='waste_%i' % (count + 1),
+                  blow_out=False)
 
     # Dry:
     protocol.delay(seconds=30)
@@ -154,7 +155,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Transfer clean product to a new plate:
     protocol.comment('\nTransfer clean product')
-    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 7, 15)
+    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 7, 15, blow_out=True)
 
     # Disengage MagDeck:
     mag_deck.disengage()
@@ -195,7 +196,8 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0,
+              blow_out=True):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, dest)
 
@@ -209,14 +211,17 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
             waste_plt[waste].top(),
             trash=False,
             disposal_volume=0,
-            air_gap=air_gap,
-            blow_out=True)
+            air_gap=air_gap)
+
+        if blow_out:
+            p300_multi.blow_out(waste_plt[waste])
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
 
 
-def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
+def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol,
+                      blow_out=False):
     '''Transfer samples.'''
     num_cols = sum(_get_num_cols()) // 2
 
@@ -224,6 +229,9 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
         pipette.transfer(vol, src, dst, disposal_volume=0)
+
+        if blow_out:
+            pipette.blow_out(dst[0])
 
 
 def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
