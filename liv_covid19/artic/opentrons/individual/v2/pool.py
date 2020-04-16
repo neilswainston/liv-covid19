@@ -190,8 +190,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol),
-                         disposal_volume=0)
+        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
