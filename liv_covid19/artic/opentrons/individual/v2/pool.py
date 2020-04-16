@@ -91,11 +91,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [6, 2]]
+         for slot in [3, 2]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [3]]
+         for slot in [6]]
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)

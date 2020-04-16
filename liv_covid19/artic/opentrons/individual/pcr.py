@@ -61,10 +61,10 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [1, 2, 6]]
+         for slot in [1, 2, 3]]
 
     tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 3)]
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 6)]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
