@@ -31,13 +31,12 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
+    'last': 'H12'
 }
 
 _POOL_PLATE = {
     'type': 'opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap'
 }
-
-_DNA_VOLS = {'A1': 3, 'H12': 1}
 
 
 def run(protocol):
@@ -264,7 +263,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(list(_DNA_VOLS.keys())[-1][1:])
+    return int(_SAMPLE_PLATE['last'][1:])
 
 
 def _get_plate_well(reag_plt, reagent):

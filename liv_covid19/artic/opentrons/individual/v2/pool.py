@@ -28,7 +28,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE = {
     'type': '4titude_96_wellplate_200ul',
-    'last': ['H12', 'H12']
+    'last': 'H12'
 }
 
 
@@ -125,9 +125,8 @@ def _pool(p10_multi, src_plts, dst_plt):
     start_tip = p10_multi.starting_tip
     tip = start_tip
 
-    for src_plt_idx, (src_plt, num_cols) in \
-            enumerate(zip(src_plts, _get_num_cols())):
-        for col_idx in range(int(num_cols // 2)):
+    for src_plt_idx, src_plt in enumerate(src_plts):
+        for col_idx in range(int(_get_num_cols() // 2)):
             p10_multi.consolidate(
                 2.5,
                 [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
@@ -164,7 +163,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
     for dst_col in dst_cols:
         dest_cols.extend(
             dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + sum(_get_num_cols()) // 2])
+                dst_col - 1:dst_col - 1 + _get_num_cols()])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
@@ -186,7 +185,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     '''Transfer samples.'''
-    num_cols = sum(_get_num_cols()) // 2
+    num_cols = _get_num_cols()
 
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
@@ -207,7 +206,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return [int(last[1:]) for last in _SAMPLE_PLATE['last']]
+    return int(_SAMPLE_PLATE['last'][1:])
 
 
 def _get_plate_well(reag_plt, reagent):
