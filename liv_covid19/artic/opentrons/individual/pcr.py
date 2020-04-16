@@ -162,7 +162,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
 
 def _distribute_reagent(pipette, reag_plt, dst_plts, dst_col, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
-                        top=None, bottom=None):
+                        top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
     pipette.pick_up_tip()
 
@@ -184,7 +184,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plts, dst_col, reagent, vol,
                        new_tip='never',
                        disposal_volume=0,
                        mix_before=mix_before,
-                       air_gap=air_gap)
+                       air_gap=air_gap,
+                       blow_out=blow_out)
 
     if return_tip:
         pipette.return_tip()

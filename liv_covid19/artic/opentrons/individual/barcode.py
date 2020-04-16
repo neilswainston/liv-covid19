@@ -98,7 +98,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     # Add water:
     protocol.comment('\nAdd water')
 
-    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1], 'water', 6.0,
+    _distribute_reagent(p10_multi, reag_plt, dst_plt, 1, 'water', 6.0,
                         return_tip=True)
 
     # Add barcodes:
@@ -189,7 +189,7 @@ def _distribute_barcodes(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
     pipette.drop_tip()
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
@@ -197,12 +197,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = []
-
-    for dst_col in dst_cols:
-        dest_cols.extend(
-            dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + _get_num_cols()])
+    dest_cols = dst_plt.rows_by_name()['A'][
+            dst_col - 1:dst_col - 1 + _get_num_cols()]
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],

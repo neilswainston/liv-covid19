@@ -47,7 +47,7 @@ def run(protocol):
 
     # Add water:
     protocol.comment('\nAdd water')
-    _distribute_reagent(p300_multi, reag_plt, dest_plt, [1], 'water', 45,
+    _distribute_reagent(p300_multi, reag_plt, dest_plt, 1, 'water', 45,
                         return_tip=True)
 
     # Combine Pool A and Pool B:
@@ -57,7 +57,7 @@ def run(protocol):
 
     # Add endprep mastermix:
     protocol.comment('\nAdd endprep mastermix')
-    _distribute_reagent(p300_multi, reag_plt, therm_plt, [1],
+    _distribute_reagent(p300_multi, reag_plt, therm_plt, 1,
                         'endprep_mastermix', 10)
 
     # Add sample pools:
@@ -150,7 +150,7 @@ def _pool(p10_multi, src_plts, dst_plt):
     return start_tip
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
+def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
@@ -158,12 +158,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = []
-
-    for dst_col in dst_cols:
-        dest_cols.extend(
-            dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + _get_num_cols()])
+    dest_cols = dst_plt.rows_by_name()['A'][
+        dst_col - 1:dst_col - 1 + _get_num_cols()]
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
