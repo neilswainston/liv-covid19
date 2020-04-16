@@ -38,7 +38,9 @@ def run(protocol):
     therm_mod, p10_multi, p300_multi, reag_plt, src_plt, dst_plts = \
         _setup(protocol)
 
-    therm_mod.set_block_temperature(4)
+    # Set to next clean tip:
+    next_tip = p10_multi.tip_racks[1].rows_by_name()['A'][2]
+    p10_multi.starting_tip = next_tip
 
     # PCR:
     _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
@@ -58,12 +60,13 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_10 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 3)]
+        [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
+         for slot in [1, 2, 6]]
 
     tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 2)]
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 3)]
 
-    # Add pipettes:
+    # Add pipette:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 

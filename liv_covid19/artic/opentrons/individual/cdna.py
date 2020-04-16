@@ -56,11 +56,17 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3]]
+         for slot in [1, 2, 6]]
+
+    tip_racks_200 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 3)]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
+
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
