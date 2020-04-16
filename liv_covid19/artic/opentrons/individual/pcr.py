@@ -98,11 +98,13 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     prev_aspirate, _, _ = _set_flow_rate(protocol, p300_multi, aspirate=50)
 
     # Add Pool A:
-    _distribute_reagent(p300_multi, reag_plt, dst_plts, 1,
+    _distribute_reagent(p300_multi, reag_plt,
+                        dst_plts, 1, int(_get_num_cols() / 2),
                         'primer_pool_a_mastermix', 22.5, bottom=1.5)
 
     # Add Pool B:
-    _distribute_reagent(p300_multi, reag_plt, dst_plts, 7,
+    _distribute_reagent(p300_multi, reag_plt,
+                        dst_plts, 7, int(_get_num_cols() / 2),
                         'primer_pool_b_mastermix', 22.5, bottom=1.5)
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
@@ -160,7 +162,9 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plts, dst_col, reagent, vol,
+def _distribute_reagent(pipette, reag_plt,
+                        dst_plts, dst_col_start, dst_col_num,
+                        reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
@@ -171,9 +175,8 @@ def _distribute_reagent(pipette, reag_plt, dst_plts, dst_col, reagent, vol,
     dest_cols = []
 
     for dst_plt in dst_plts:
-        dest_cols.extend(
-            dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + int(_get_num_cols() / 2)])
+        dest_cols.extend(dst_plt.rows_by_name()['A'][
+            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],

@@ -198,7 +198,7 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     dest_cols = dst_plt.rows_by_name()['A'][
-            dst_col - 1:dst_col - 1 + _get_num_cols()]
+        dst_col - 1:dst_col - 1 + _get_num_cols()]
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
