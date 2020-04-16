@@ -38,6 +38,13 @@ def run(protocol):
     therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dest_plt, \
         therm_plt = _setup(protocol)
 
+    # Set to next clean tip:
+    next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
+    p10_multi.starting_tip = next_tip_10
+
+    next_tip_300 = p300_multi.tip_racks[0].rows_by_name()['A'][2]
+    p300_multi.starting_tip = next_tip_300
+
     # Add water:
     protocol.comment('\nAdd water')
     _distribute_reagent(p300_multi, reag_plt, dest_plt, [1], 'water', 45,
@@ -84,11 +91,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [3]]
+         for slot in [6, 2]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [2]]
+         for slot in [3]]
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -101,7 +108,7 @@ def _setup(protocol):
         'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add source, thermo and mag plates:
-    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 6, 'PCR')]
+    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 1, 'PCR')]
     dest_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR_clean')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR_normal')
 
@@ -115,7 +122,7 @@ def _setup(protocol):
 
 def _pool(p10_multi, src_plts, dst_plt):
     '''Pool A and B step.'''
-    start_tip = [rack.next_tip() for rack in p10_multi.tip_racks][0]
+    start_tip = p10_multi.starting_tip
     tip = start_tip
 
     for src_plt_idx, (src_plt, num_cols) in \
@@ -133,6 +140,12 @@ def _pool(p10_multi, src_plts, dst_plt):
 
             if tip_idx < len(tip.parent.rows_by_name()['A']):
                 tip = tip.parent.rows_by_name()['A'][tip_idx]
+                p10_multi.starting_tip = tip
+            else:
+                next_tip_rack = [rack for rack in p10_multi.tip_racks
+                                 if rack != p10_multi.starting_tip.parent][0]
+
+                tip = next_tip_rack.rows_by_name()['A'][0]
                 p10_multi.starting_tip = tip
 
     return start_tip
