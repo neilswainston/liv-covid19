@@ -116,8 +116,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
     therm_mod.open_lid()
 
 
-def _incubate(therm_mod, block_temp, minutes, seconds=0,
-              lid_temp=None):
+def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     '''Incubate.'''
     if lid_temp and therm_mod.lid_temperature != lid_temp:
         therm_mod.set_lid_temperature(lid_temp)

@@ -195,8 +195,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
                          disposal_volume=0)
 
 
-def _incubate(therm_mod, block_temp, minutes, seconds=0,
-              lid_temp=None):
+def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     '''Incubate.'''
     if lid_temp and therm_mod.lid_temperature != lid_temp:
         therm_mod.set_lid_temperature(lid_temp)
