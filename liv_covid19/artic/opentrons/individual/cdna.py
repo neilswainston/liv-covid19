@@ -85,7 +85,9 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
 
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p10_multi, reag_plt, dst_plt, 1, 'primer_mix', 8.0)
+    _distribute_reagent(p10_multi, reag_plt,
+                        [dst_plt], 1, _get_num_cols(),
+                        'primer_mix', 8.0)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -101,8 +103,9 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
-    _distribute_reagent(p10_multi, reag_plt, dst_plt, 1, 'rt_reaction_mix',
-                        7.0)
+    _distribute_reagent(p10_multi, reag_plt,
+                        [dst_plt], 1, _get_num_cols(),
+                        'rt_reaction_mix', 7.0)
 
     # Incubate at 42C for 50 minute:
     therm_mod.close_lid()
@@ -136,7 +139,9 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
         pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
+def _distribute_reagent(pipette, reag_plt,
+                        dst_plts, dst_col_start, dst_col_num,
+                        reagent, vol,
                         return_tip=False, mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
@@ -144,8 +149,11 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = dst_plt.rows_by_name()['A'][
-        dst_col - 1:dst_col - 1 + _get_num_cols()]
+    dest_cols = []
+
+    for dst_plt in dst_plts:
+        dest_cols.extend(dst_plt.rows_by_name()['A'][
+            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
