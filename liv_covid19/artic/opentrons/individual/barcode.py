@@ -53,7 +53,7 @@ def run(protocol):
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
     # Pool barcodes:
-    _pool(protocol, p10_single, dst_plt, pool_plt)
+    _barcode_pool(protocol, p10_single, dst_plt, pool_plt)
 
 
 def _setup(protocol):
@@ -140,7 +140,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     therm_mod.open_lid()
 
 
-def _pool(protocol, p10_single, src_plt, dst_plt):
+def _barcode_pool(protocol, p10_single, src_plt, dst_plt):
     '''Pool.'''
     protocol.comment('\nPooling barcoded samples')
 
