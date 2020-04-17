@@ -58,9 +58,16 @@ def run(protocol):
 
     # Add endprep mastermix:
     protocol.comment('\nAdd endprep mastermix')
+
+    prev_aspirate, prev_dispense, _ = \
+        _set_flow_rate(protocol, p300_multi, aspirate=50, dispense=100)
+
     _distribute_reagent(p300_multi, reag_plt,
                         [therm_plt], 1, _get_num_cols(),
                         'endprep_mastermix', 10)
+
+    _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate,
+                   dispense=prev_dispense)
 
     # Add sample pools:
     protocol.comment('\nAdd pooled samples')
@@ -204,6 +211,31 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
     therm_mod.set_block_temperature(block_temp,
                                     hold_time_minutes=minutes,
                                     hold_time_seconds=seconds)
+
+
+def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
+                   blow_out=None):
+    '''Set flow rates.'''
+    old_aspirate = pipette.flow_rate.aspirate
+    old_dispense = pipette.flow_rate.dispense
+    old_blow_out = pipette.flow_rate.blow_out
+
+    if aspirate and aspirate != old_aspirate:
+        protocol.comment('Updating aspirate from %i to %i'
+                         % (old_aspirate, aspirate))
+        pipette.flow_rate.aspirate = aspirate
+
+    if dispense and dispense != old_dispense:
+        protocol.comment('Updating dispense from %i to %i'
+                         % (old_dispense, dispense))
+        pipette.flow_rate.dispense = dispense
+
+    if blow_out and blow_out != old_blow_out:
+        protocol.comment('Updating blow_out from %i to %i'
+                         % (old_blow_out, blow_out))
+        pipette.flow_rate.blow_out = blow_out
+
+    return old_aspirate, old_dispense, old_blow_out
 
 
 def _get_num_cols():
