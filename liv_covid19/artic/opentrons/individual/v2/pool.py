@@ -49,12 +49,7 @@ def run(protocol):
     protocol.comment('\nAdd water')
     _distribute_reagent(p300_multi, reag_plt,
                         [dest_plt], 1, _get_num_cols(),
-                        'water', 45, return_tip=True)
-
-    # Combine Pool A and Pool B:
-    protocol.comment('\nCombine Pool A and Pool B')
-    dirty_tip = _pool(p10_multi, src_plts, dest_plt)
-    p10_multi.starting_tip = dirty_tip
+                        'water', 45, tip_fate='retain')
 
     # Add endprep mastermix:
     protocol.comment('\nAdd endprep mastermix')
@@ -69,9 +64,9 @@ def run(protocol):
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)
 
-    # Add sample pools:
-    protocol.comment('\nAdd pooled samples')
-    _transfer_samples(p10_multi, dest_plt, therm_plt, 1, 1, 5)
+    # Combine Pool A and Pool B:
+    protocol.comment('\nCombine Pool A and Pool B')
+    _pool(p10_multi, src_plts, dest_plt, therm_plt)
 
     # Incubate at 20C for 5 minute:
     therm_mod.close_lid()
@@ -129,43 +124,39 @@ def _setup(protocol):
         therm_plt
 
 
-def _pool(p10_multi, src_plts, dst_plt):
+def _pool(p10_multi, src_plts, dst_plt, therm_plt):
     '''Pool A and B step.'''
-    start_tip = p10_multi.starting_tip
-    tip = start_tip
-
     for src_plt_idx, src_plt in enumerate(src_plts):
         for col_idx in range(int(_get_num_cols() // 2)):
-            p10_multi.consolidate(
-                2.5,
-                [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
-                dst_plt.columns()[col_idx + (src_plt_idx * 6)],
-                mix_after=(3, 5),
-                trash=False,
-                disposal_volume=0)
+            # Pool, dilute and mix in PCR_clean plate:
+            dst_well = dst_plt.columns()[
+                col_idx + (src_plt_idx * 6)][0]
+            p10_multi.pick_up_tip()
+            p10_multi.aspirate(2.5, src_plt.columns()[col_idx][0])
+            p10_multi.aspirate(2.5, src_plt.columns()[col_idx + 6][0])
+            p10_multi.dispense(5.0, dst_well)
+            p10_multi.mix(3, 10.0)
 
-            tip_idx = int(tip.display_name.split()[0][1:])
+            # Transfer to PCR_normal plate on thermocycler:
+            p10_multi.transfer(5.0,
+                               dst_well,
+                               therm_plt.columns()[
+                                   col_idx + (src_plt_idx * 6)][0],
+                               mix_after=(3, 10.0),
+                               disposal_volume=0,
+                               new_tip='never')
 
-            if tip_idx < len(tip.parent.rows_by_name()['A']):
-                tip = tip.parent.rows_by_name()['A'][tip_idx]
-                p10_multi.starting_tip = tip
-            else:
-                next_tip_rack = [rack for rack in p10_multi.tip_racks
-                                 if rack != p10_multi.starting_tip.parent][0]
-
-                tip = next_tip_rack.rows_by_name()['A'][0]
-                p10_multi.starting_tip = tip
-
-    return start_tip
+            p10_multi.drop_tip()
 
 
 def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0,
+                        tip_fate='drop', mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
@@ -187,10 +178,10 @@ def _distribute_reagent(pipette, reag_plt,
                        air_gap=air_gap,
                        blow_out=blow_out)
 
-    if return_tip:
-        pipette.return_tip()
-    else:
+    if tip_fate == 'drop':
         pipette.drop_tip()
+    elif tip_fate == 'return':
+        pipette.return_tip()
 
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
