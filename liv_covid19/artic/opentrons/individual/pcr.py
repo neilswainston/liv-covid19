@@ -165,10 +165,11 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
 def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0,
+                        tip_fate='drop', mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
@@ -190,10 +191,10 @@ def _distribute_reagent(pipette, reag_plt,
                        air_gap=air_gap,
                        blow_out=blow_out)
 
-    if return_tip:
-        pipette.return_tip()
-    else:
+    if tip_fate == 'drop':
         pipette.drop_tip()
+    elif tip_fate == 'return':
+        pipette.return_tip()
 
 
 def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,

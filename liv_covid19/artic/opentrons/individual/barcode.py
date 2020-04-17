@@ -101,7 +101,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
                         'water', 6.0,
-                        return_tip=True)
+                        tip_fate='return')
 
     # Add barcodes:
     protocol.comment('\nAdd barcodes')
@@ -194,10 +194,11 @@ def _distribute_barcodes(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
 def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0,
+                        tip_fate='drop', mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
@@ -219,10 +220,10 @@ def _distribute_reagent(pipette, reag_plt,
                        air_gap=air_gap,
                        blow_out=blow_out)
 
-    if return_tip:
-        pipette.return_tip()
-    else:
+    if tip_fate == 'drop':
         pipette.drop_tip()
+    elif tip_fate == 'return':
+        pipette.return_tip()
 
 
 def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
