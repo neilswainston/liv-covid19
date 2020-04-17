@@ -145,12 +145,15 @@ def _barcode_pool(protocol, p10_single, src_plt, dst_plt):
     protocol.comment('\nPooling barcoded samples')
 
     for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
-        p10_single.consolidate(20.0,
-                               [well
-                                for col in src_plt.columns()[
-                                    col_idx:col_idx + 3]
-                                for well in col],
-                               dst_plt.wells()[idx])
+        p10_single.pick_up_tip()
+
+        for col in src_plt.columns()[col_idx:col_idx + 3]:
+            for well in col:
+                for _ in range(2):
+                    p10_single.aspirate(10.0, well)
+                    p10_single.dispense(10.0, dst_plt.wells()[idx])
+
+        p10_single.drop_tip()
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
