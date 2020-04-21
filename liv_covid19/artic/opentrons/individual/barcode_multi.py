@@ -147,6 +147,8 @@ def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
     '''Pool.'''
     protocol.comment('\nPooling barcoded samples')
 
+    vol = 20.0
+
     # Bottom rows of tip-rack:
     tip_wells = ['H9', 'H10', 'H11', 'H12']
 
@@ -156,10 +158,10 @@ def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
             for well in col:
-                p300_multi.aspirate(20.0, well)
+                p300_multi.aspirate(vol, well)
                 print(p300_multi._ctx._location_cache)
 
-            p300_multi.dispense(20.0 * len(col), dst_plt.wells()[idx])
+            p300_multi.dispense(vol * len(col), dst_plt.wells()[idx])
             print(p300_multi._ctx._location_cache)
 
         p300_multi.drop_tip()
