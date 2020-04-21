@@ -41,7 +41,7 @@ _POOL_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, tip_racks_200, reag_plt, src_plt, dst_plt, \
+    therm_mod, p10_multi, p300_multi, reag_plt, src_plt, dst_plt, \
         pool_plt = _setup(protocol)
 
     # Set to next clean tip:
@@ -52,7 +52,7 @@ def run(protocol):
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
     # Pool barcodes:
-    _barcode_pool(protocol, p10_multi, tip_racks_200, dst_plt, pool_plt)
+    _barcode_pool(protocol, p300_multi, dst_plt, pool_plt)
 
 
 def _setup(protocol):
@@ -72,14 +72,15 @@ def _setup(protocol):
          for slot in [2, 3, 1]]
 
     tip_racks_200 = \
-        protocol.load_labware('opentrons_96_filtertiprack_200ul', 6)
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
+         for slot in [6]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 
-    # p10_single = protocol.load_instrument(
-    #    'p10_single', 'right', tip_racks=tip_racks_10[-1:])
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -89,7 +90,7 @@ def _setup(protocol):
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_barcode')
     pool_plt = protocol.load_labware(_POOL_PLATE['type'], 9, 'barcode_pool')
 
-    return therm_mod, p10_multi, tip_racks_200, reag_plt, src_plt, therm_plt, \
+    return therm_mod, p10_multi, p300_multi, reag_plt, src_plt, therm_plt, \
         pool_plt
 
 
@@ -142,7 +143,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     therm_mod.open_lid()
 
 
-def _barcode_pool(protocol, p10_multi, tip_racks_200, src_plt, dst_plt):
+def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
     '''Pool.'''
     protocol.comment('\nPooling barcoded samples')
 
@@ -150,18 +151,18 @@ def _barcode_pool(protocol, p10_multi, tip_racks_200, src_plt, dst_plt):
     tip_wells = ['H9', 'H10', 'H11', 'H12']
 
     for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
-        p10_multi.pick_up_tip(tip_racks_200[tip_wells[idx]])
-        print(p10_multi._ctx._location_cache)
+        p300_multi.pick_up_tip(p300_multi.tip_racks[0][tip_wells[idx]])
+        print(p300_multi._ctx._location_cache)
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
             for well in col:
-                for _ in range(2):
-                    p10_multi.aspirate(10.0, well)
-                    print(p10_multi._ctx._location_cache)
-                    p10_multi.dispense(10.0, dst_plt.wells()[idx])
-                    print(p10_multi._ctx._location_cache)
+                p300_multi.aspirate(20.0, well)
+                print(p300_multi._ctx._location_cache)
 
-        p10_multi.drop_tip()
+            p300_multi.dispense(20.0 * len(col), dst_plt.wells()[idx])
+            print(p300_multi._ctx._location_cache)
+
+        p300_multi.drop_tip()
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
