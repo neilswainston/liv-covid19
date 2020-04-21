@@ -41,8 +41,8 @@ _POOL_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_multi, reag_plt, src_plt, dst_plt, pool_plt = \
-        _setup(protocol)
+    therm_mod, p10_multi, tip_racks_200, reag_plt, src_plt, dst_plt, \
+        pool_plt = _setup(protocol)
 
     # Set to next clean tip:
     next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
@@ -52,7 +52,7 @@ def run(protocol):
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
     # Pool barcodes:
-    _barcode_pool(protocol, p10_multi, dst_plt, pool_plt)
+    _barcode_pool(protocol, p10_multi, tip_racks_200, dst_plt, pool_plt)
 
 
 def _setup(protocol):
@@ -69,7 +69,10 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3, 9]]
+         for slot in [2, 3, 1]]
+
+    tip_racks_200 = \
+        protocol.load_labware('opentrons_96_filtertiprack_200ul', 6)
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
@@ -84,9 +87,10 @@ def _setup(protocol):
     # Add source, thermo and mag plates:
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_normal')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_barcode')
-    pool_plt = protocol.load_labware(_POOL_PLATE['type'], 6, 'barcode_pool')
+    pool_plt = protocol.load_labware(_POOL_PLATE['type'], 9, 'barcode_pool')
 
-    return therm_mod, p10_multi, reag_plt, src_plt, therm_plt, pool_plt
+    return therm_mod, p10_multi, tip_racks_200, reag_plt, src_plt, therm_plt, \
+        pool_plt
 
 
 def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
@@ -138,7 +142,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     therm_mod.open_lid()
 
 
-def _barcode_pool(protocol, p10_multi, src_plt, dst_plt):
+def _barcode_pool(protocol, p10_multi, tip_racks_200, src_plt, dst_plt):
     '''Pool.'''
     protocol.comment('\nPooling barcoded samples')
 
@@ -146,7 +150,7 @@ def _barcode_pool(protocol, p10_multi, src_plt, dst_plt):
     tip_wells = ['H9', 'H10', 'H11', 'H12']
 
     for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
-        p10_multi.pick_up_tip(p10_multi.tip_racks[-1][tip_wells[idx]])
+        p10_multi.pick_up_tip(tip_racks_200[tip_wells[idx]])
         print(p10_multi._ctx._location_cache)
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
