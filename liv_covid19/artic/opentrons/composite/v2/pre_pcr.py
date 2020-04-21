@@ -28,10 +28,9 @@ _REAGENT_PLATE = {
                    'primer_pool_b_mastermix': 'A4'}
 }
 
-_SAMPLE_PLATE = {
-    'type': '4titude_96_wellplate_200ul',
-    'last': 'H12'
-}
+_SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
+
+_SAMPLE_PLATE_LAST = 'H12'
 
 
 def run(protocol):
@@ -50,7 +49,7 @@ def run(protocol):
         Add new %s to %s.
     ''' % (src_plt,
            dst_plts[0], temp_deck.labware.parent._display_name,
-           _SAMPLE_PLATE['type'], therm_mod.labware.parent._display_name))
+           _SAMPLE_PLATE_TYPE, therm_mod.labware.parent._display_name))
     src_plt.name = 'cDNA'
     dst_plts[0].name = 'PCR'
 
@@ -88,12 +87,12 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')
-    dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')]
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
+    dst_plts = [therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'cDNA')]
 
     if _get_num_cols() > 6:
         dst_plts.append(
-            protocol.load_labware(_SAMPLE_PLATE['type'], 9, 'PCR2'))
+            protocol.load_labware(_SAMPLE_PLATE_TYPE, 9, 'PCR2'))
 
     return therm_mod, temp_deck, p10_multi, p300_multi, reag_plt, src_plt, \
         dst_plts
@@ -303,7 +302,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE['last'][1:])
+    return int(_SAMPLE_PLATE_LAST[1:])
 
 
 def _get_plate_well(reag_plt, reagent):

@@ -26,10 +26,9 @@ _REAGENT_PLATE = {
                    'rt_reaction_mix': 'A2'}
 }
 
-_SAMPLE_PLATE = {
-    'type': '4titude_96_wellplate_200ul',
-    'last': 'H12'
-}
+_SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
+
+_SAMPLE_PLATE_LAST = 'H12'
 
 
 def run(protocol):
@@ -58,22 +57,22 @@ def _setup(protocol):
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
          for slot in [1, 2, 3]]
 
-    tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 6)]
+    # tip_racks_200 = \
+    #    [protocol.load_labware('opentrons_96_filtertiprack_200ul', 6)]
 
     # Add pipette:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 
-    p300_multi = protocol.load_instrument(
-        'p300_multi', 'right', tip_racks=tip_racks_200)
+    # p300_multi = protocol.load_instrument(
+    #    'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5, 'Reagents')
 
     # Add source and thermo plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'RNA')
-    dst_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'cDNA')
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
+    dst_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'cDNA')
 
     return therm_mod, p10_multi, reag_plt, src_plt, dst_plt
 
@@ -190,7 +189,7 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE['last'][1:])
+    return int(_SAMPLE_PLATE_LAST[1:])
 
 
 def _get_plate_well(reag_plt, reagent):

@@ -26,10 +26,9 @@ _REAGENT_PLATE = {
                    'endprep_mastermix': 'A6'}
 }
 
-_SAMPLE_PLATE = {
-    'type': '4titude_96_wellplate_200ul',
-    'last': 'H12'
-}
+_SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
+
+_SAMPLE_PLATE_LAST = 'H12'
 
 
 def run(protocol):
@@ -81,13 +80,13 @@ def _setup(protocol):
         'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add source, thermo and mag plates:
-    src_plts = [protocol.load_labware(_SAMPLE_PLATE['type'], 1, 'PCR')]
-    dest_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR_clean')
-    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR_normal')
+    src_plts = [protocol.load_labware(_SAMPLE_PLATE_TYPE, 1, 'PCR')]
+    dest_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_clean')
+    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_normal')
 
-    if len(_SAMPLE_PLATE['last']) > 1:
+    if len(_SAMPLE_PLATE_LAST) > 1:
         src_plts.append(protocol.load_labware(
-            _SAMPLE_PLATE['type'], 9, 'PCR2'))
+            _SAMPLE_PLATE_TYPE, 9, 'PCR2'))
 
     return therm_mod, p10_multi, p300_multi, reag_plt, src_plts, dest_plt, \
         therm_plt
@@ -239,7 +238,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE['last'][1:])
+    return int(_SAMPLE_PLATE_LAST[1:])
 
 
 def _get_plate_well(reag_plt, reagent):
