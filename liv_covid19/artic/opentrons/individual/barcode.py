@@ -70,7 +70,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3, 1]]
+         for slot in [2, 3, 9]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
