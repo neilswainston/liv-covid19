@@ -43,9 +43,6 @@ def run(in_filename, out_dir):
     mosquito_df.to_csv(os.path.join(out_dir, 'mosquito.csv'),
                        index=False)
 
-    # Get OpenTrons worklists:
-    _get_ot(tab_df, out_dir)
-
 
 def _get_data(in_filename):
     '''Get data.'''
@@ -110,32 +107,10 @@ def _get_mosquito(tab_df, max_vol=12000):
     return df
 
 
-def _get_ot(df, out_dir):
-    '''Get OpenTrons worklists.'''
-    resp = df.apply(_to_tuple, axis=1)
-    dna_concs = dict(resp.tolist())
-
-    # Convert:
-    py_dir = 'liv_covid19/artic/opentrons/individual'
-
-    for filename in ['barcode.py', 'normalisation.py']:
-        _replace(os.path.join(py_dir, filename), out_dir, dna_concs)
-
-
 def _to_tuple(row):
     '''Convert row to tuple.'''
     well = chr(int(row['Row']) - 1 + ord('A')) + str(int(row['Column']))
     return (well, row['conc'])
-
-
-def _replace(flnme_in, out_dir, dna_concs):
-    '''Replace.'''
-    flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
-
-    with open(flnme_in, 'rt') as file_in, open(flnme_out, 'wt') as file_out:
-        for line in file_in:
-            file_out.write(line.replace('_DNA_VOLS = {\'A1\': 3, \'H12\': 1}',
-                                        '_DNA_VOLS = %s' % dna_concs))
 
 
 def main(args):
