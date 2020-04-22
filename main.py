@@ -8,6 +8,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 @author: neilswainston
 '''
 # pylint: disable=invalid-name
+# pylint: disable=unused-argument
 # pylint: disable=wrong-import-order
 # import json
 import json
@@ -43,6 +44,12 @@ _MANAGER = manager.Manager(_EXPORT_FOLDER)
 
 @app.route('/')
 def home():
+    '''Renders homepage.'''
+    return app.send_static_file('index.html')
+
+
+@app.route('/<path:path>')
+def get_path(path):
     '''Renders homepage.'''
     return app.send_static_file('index.html')
 

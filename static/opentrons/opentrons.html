@@ -1,0 +1,51 @@
+<!-- Submission form -->
+<div data-ng-init="ctrl.setApp('Opentrons')">
+	<div class="col-md-6">			
+		<div class="panel panel-default">
+	  		<div class="panel-heading">
+		  		Opentrons
+				<button type="submit" data-ng-click="ctrl.submit()"
+								data-ng-disabled="ctrl.response.update.status == 'running' || form.$invalid"
+								data-ng-class="(ctrl.response.update.status == 'running' || form.$invalid) ? 'btn-danger': 'btn-success'"
+								class="pull-right btn btn-xs">Submit</button>
+			</div>
+	  		<div class="result-panel panel-body">
+				<form class="form-horizontal" role="form" name="form">
+					<div class="form-group">
+						<label class="col-xs-4 col-form-label">Samples file:</label>
+						<div class="col-xs-6">
+							<input type="text" class="form-control"
+								data-ng-model="ctrl.query.file_name"
+								disabled
+								required>
+						</div>
+						<div class="col-xs-2">
+							<label class="btn btn-default btn-sm btn-file btn-field">
+								Choose file
+								<input type="file" id="file-button"
+									filereader="ctrl.query.file_content"
+									filename="ctrl.query.file_name"
+									placeholder="Enter samples file">
+							</label>
+						</div>
+					</div>
+				</form>
+				<div>
+					(Ensure file is a csv file of this <a href="static/opentrons/example_sample_file.csv" target="_out">format</a>.)
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	
+<!-- Results panel -->
+<div class="col-md-6" data-ng-show="ctrl.response().result">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+	  		Results
+		</div>
+		<div class="panel-body">
+			<a href="{{ctrl.downloadUrl()}}" target="_out" download class="btn btn-primary btn-xs" role="button">Download</a>
+		</div>
+	</div>
+</div>

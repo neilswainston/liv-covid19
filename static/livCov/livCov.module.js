@@ -4,8 +4,13 @@ livCovApp.config(function($routeProvider, $locationProvider) {
 	$routeProvider.when("/", {
 		controller: "livCovCtrl",
 		controllerAs: "ctrl",
-		templateUrl: "static/postNormalise/postNormalise.html",
-		app: "PostNormalise"
+		templateUrl: "static/opentrons/opentrons.html",
+		app: "Opentrons"
+	}).when("/opentrons", {
+		controller: "livCovCtrl",
+		controllerAs: "ctrl",
+		templateUrl: "static/opentrons/opentrons.html",
+		app: "Opentrons"
 	}).when("/postNormalise", {
 		controller: "livCovCtrl",
 		controllerAs: "ctrl",

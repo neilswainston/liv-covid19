@@ -12,7 +12,7 @@ import os.path
 from threading import Thread
 import time
 
-from liv_covid19.web.artic import postnormal_thread
+from liv_covid19.web.artic import postnormal_thread, opentrons_thread
 
 
 class Manager():
@@ -74,6 +74,9 @@ class Manager():
     def __get_thread(self, query):
         '''Get thread.'''
         app = query.get('app', 'undefined')
+
+        if app == 'Opentrons':
+            return opentrons_thread.OpentronsThread(query, self.__out_dir)
 
         if app == 'PostNormalise':
             return postnormal_thread.PostNormaliseThread(query, self.__out_dir)
