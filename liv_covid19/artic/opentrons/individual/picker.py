@@ -28,10 +28,10 @@ _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    p10_multi, src_plt, dst_plt = _setup(protocol)
+    p10_single, src_plt, dst_plt = _setup(protocol)
 
     # Pick:
-    _pick(protocol, p10_multi, src_plt, dst_plt)
+    _pick(protocol, p10_single, src_plt, dst_plt)
 
 
 def _setup(protocol):
@@ -47,15 +47,15 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_10 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 1)]
+        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 5)]
 
     # Add pipette:
     p10_single = protocol.load_instrument(
         'p10_single', 'right', tip_racks=tip_racks_10)
 
-    # Add source and thermo plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
-    dst_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'cDNA')
+    # Add plates:
+    src_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 6, 'sample')
+    dst_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
 
     return p10_single, src_plt, dst_plt
 
