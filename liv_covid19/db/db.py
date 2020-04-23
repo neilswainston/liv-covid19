@@ -42,6 +42,8 @@ def _get_spreadsheets():
 
 def _get_credentials():
     '''Get credentials.'''
+    credentials = None
+
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time:
