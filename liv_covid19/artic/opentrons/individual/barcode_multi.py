@@ -153,7 +153,8 @@ def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
     tip_wells = ['H9', 'H10', 'H11', 'H12']
 
     for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
-        p300_multi.pick_up_tip(p300_multi.tip_racks[0][tip_wells[idx]])
+        p300_multi.pick_up_tip(p300_multi.tip_racks[0][tip_wells[idx]],
+                               presses=1, increment=0)
         print(p300_multi._ctx._location_cache)
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
