@@ -41,8 +41,8 @@ _POOL_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_single, p10_multi, reag_plt, src_plt, dst_plt, pool_plt = \
-        _setup(protocol)
+    therm_mod, p10_multi, p300_multi, reag_plt, src_plt, dst_plt, \
+        pool_plt = _setup(protocol)
 
     # Set to next clean tip:
     next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
@@ -52,7 +52,7 @@ def run(protocol):
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
     # Pool barcodes:
-    _barcode_pool(protocol, p10_single, dst_plt, pool_plt)
+    _barcode_pool(protocol, p300_multi, dst_plt, pool_plt)
 
 
 def _setup(protocol):
@@ -69,24 +69,28 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3, 9]]
+         for slot in [2, 3, 1]]
+
+    tip_racks_200 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
+         for slot in [6]]
+
+    # Add reagent plate:
+    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
 
-    p10_single = protocol.load_instrument(
-        'p10_single', 'right', tip_racks=tip_racks_10[-1:])
-
-    # Add reagent plate:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add source, thermo and mag plates:
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_normal')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_barcode')
-    pool_plt = protocol.load_labware(_POOL_PLATE['type'], 6, 'barcode_pool')
+    pool_plt = protocol.load_labware(_POOL_PLATE['type'], 9, 'barcode_pool')
 
-    return therm_mod, p10_single, p10_multi, reag_plt, src_plt, therm_plt, \
+    return therm_mod, p10_multi, p300_multi, reag_plt, src_plt, therm_plt, \
         pool_plt
 
 
@@ -139,20 +143,29 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     therm_mod.open_lid()
 
 
-def _barcode_pool(protocol, p10_single, src_plt, dst_plt):
+def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
     '''Pool.'''
     protocol.comment('\nPooling barcoded samples')
 
+    vol = 20.0
+
+    # Bottom rows of tip-rack:
+    tip_wells = ['H9', 'H10', 'H11', 'H12']
+
     for idx, col_idx in enumerate(range(0, _get_num_cols(), 3)):
-        p10_single.pick_up_tip()
+        p300_multi.pick_up_tip(p300_multi.tip_racks[0][tip_wells[idx]],
+                               presses=1, increment=0)
+        print(p300_multi._ctx._location_cache)
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
             for well in col:
-                for _ in range(2):
-                    p10_single.aspirate(10.0, well)
-                    p10_single.dispense(10.0, dst_plt.wells()[idx])
+                p300_multi.aspirate(vol, well)
+                print(p300_multi._ctx._location_cache)
 
-        p10_single.drop_tip()
+            p300_multi.dispense(vol * len(col), dst_plt.wells()[idx])
+            print(p300_multi._ctx._location_cache)
+
+        p300_multi.drop_tip()
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
