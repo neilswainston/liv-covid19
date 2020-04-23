@@ -159,7 +159,8 @@ def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
 
         for col in src_plt.columns()[col_idx:col_idx + 3]:
             for well in col:
-                p300_multi.aspirate(vol, well)
+                # z corresponds to mm above the well bottom:
+                p300_multi.aspirate(vol, well.bottom(z=0))
                 print(p300_multi._ctx._location_cache)
 
             p300_multi.dispense(vol * len(col), dst_plt.wells()[idx])
