@@ -124,7 +124,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     protocol.comment('\nAdd ligation mastermix')
 
     prev_aspirate, prev_dispense, _ = \
-        _set_flow_rate(protocol, p10_multi, aspirate=1, dispense=2)
+        _set_flow_rate(protocol, p10_multi, aspirate=3, dispense=5)
 
     _transfer_reagent(p10_multi, reag_plt, dst_plt,
                       1, 'ligation_mastermix', 10)
