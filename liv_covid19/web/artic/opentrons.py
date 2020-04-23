@@ -49,7 +49,7 @@ def run(in_filename, out_dir):
         'liv_covid19/artic/opentrons/individual/picker.py',
         'liv_covid19/artic/opentrons/composite/v2/pre_pcr.py',
         'liv_covid19/artic/opentrons/individual/v2/pool.py',
-            'liv_covid19/artic/opentrons/individual/barcode_multi.py']:
+            'liv_covid19/artic/opentrons/individual/barcode.py']:
         _replace(filename, out_dir, rna_plate_wells, last_well)
 
 
