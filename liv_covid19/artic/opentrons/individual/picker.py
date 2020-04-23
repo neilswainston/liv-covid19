@@ -28,10 +28,10 @@ _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    p10_single, src_plt, dst_plt = _setup(protocol)
+    p10_multi, src_plt, dst_plt = _setup(protocol)
 
     # Pick:
-    _pick(protocol, p10_single, src_plt, dst_plt)
+    _pick(protocol, p10_multi, src_plt, dst_plt)
 
 
 def _setup(protocol):
@@ -50,20 +50,21 @@ def _setup(protocol):
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', 5)]
 
     # Add pipette:
-    p10_single = protocol.load_instrument(
-        'p10_single', 'right', tip_racks=tip_racks_10)
+    p10_multi = protocol.load_instrument(
+        'p10_multi', 'left', tip_racks=tip_racks_10)
 
     # Add plates:
     src_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 6, 'sample')
     dst_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
 
-    return p10_single, src_plt, dst_plt
+    return p10_multi, src_plt, dst_plt
 
 
-def _pick(protocol, p10_single, src_plt, dst_plt):
+def _pick(protocol, p10_multi, src_plt, dst_plt):
     '''Pick.'''
     # Add RNA samples:
     protocol.comment('\nPick RNA samples')
+    tip_idx = -1
     dst_well_idx = 0
 
     for idx, (src_plt_name, src_wells) in enumerate(_RNA_PLATE_WELLS.items()):
@@ -73,10 +74,13 @@ def _pick(protocol, p10_single, src_plt, dst_plt):
         src_plt.name = src_plt_name
 
         for src_well in src_wells:
-            p10_single.transfer(5.0,
-                                src_plt[src_well],
-                                dst_plt.wells()[dst_well_idx],
-                                disposal_volume=0)
+            p10_multi.pick_up_tip(p10_multi.tip_racks[0].wells()[tip_idx],
+                                  presses=1, increment=0)
+
+            p10_multi.aspirate(5.0, src_plt[src_well])
+            p10_multi.dispense(5.0, dst_plt.wells()[dst_well_idx])
+            p10_multi.drop_tip()
+            tip_idx -= 1
             dst_well_idx += 1
 
         if idx < len(_RNA_PLATE_WELLS) - 1:
