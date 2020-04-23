@@ -20,14 +20,6 @@ metadata = {'apiLevel': '2.1',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
             'description': 'simple'}
 
-_REAGENT_PLATE = {
-    'type': 'nest_12_reservoir_15ml',
-    'components': {'primer_mix': 'A1',
-                   'rt_reaction_mix': 'A2',
-                   'primer_pool_a_mastermix': 'A3',
-                   'primer_pool_b_mastermix': 'A4'}
-}
-
 _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
 _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}

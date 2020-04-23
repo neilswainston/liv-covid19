@@ -133,5 +133,5 @@ dmypy.json
 /**/.DS_Store
 /out/
 /liv_covid19/artic/opentrons/legacy
-/**/credentials.json
+/**/credentials*.json
 /**/token.pickle
