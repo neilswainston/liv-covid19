@@ -46,11 +46,9 @@ def run(in_filename, out_dir):
         for key, grp_df in df[df['status'] != 'NEG'].groupby('plate_id')}
 
     for filename in [
-        'liv_covid19/artic/opentrons/individual/picker.py',
-        'liv_covid19/artic/opentrons/composite/v2/pre_pcr.py',
-        'liv_covid19/artic/opentrons/individual/v2/pool.py',
-            'liv_covid19/artic/opentrons/individual/barcode.py']:
-        _replace(filename, out_dir, rna_plate_wells, last_well)
+            'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'picker.py', 'pool.py']:
+        _replace(os.path.join('liv_covid19/artic/opentrons/', filename),
+                 out_dir, rna_plate_wells, last_well)
 
 
 def _get_wells(df):
