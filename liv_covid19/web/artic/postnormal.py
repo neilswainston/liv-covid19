@@ -15,16 +15,17 @@ import numpy as np
 import pandas as pd
 
 
-def run(in_filename, out_dir):
+def run(in_filename, out_dir, target_mass=50):
     '''run.'''
     in_df = _get_data(in_filename)
 
     # Check validity:
-    assert in_df.min().min() >= 50 / 7.5, \
-        'Invalid concentration(s) of < 6.67ul/ng detected'
+    min_val = target_mass / 7.5
+    assert in_df.min().min() >= min_val, \
+        'Invalid concentration(s) of < %.2ful/ng detected' % min_val
 
     # Convert to vol required for 50ng:
-    in_df = 50 / in_df
+    in_df = target_mass / in_df
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -105,6 +106,30 @@ def _get_mosquito(tab_df, max_vol=12000):
                   'Nanolitres']
 
     return df
+
+
+def _get_ot(df, out_dir):
+    '''Get OpenTrons worklists.'''
+    resp = df.apply(_to_tuple, axis=1)
+    dna_concs = dict(resp.tolist())
+
+    # Convert:
+    py_dir = 'liv_covid19/artic/opentrons/individual/v1'
+
+    for filename in ['normalisation.py']:
+        _replace(os.path.join(py_dir, filename), out_dir, dna_concs)
+
+
+def _replace(flnme_in, out_dir, dna_concs):
+    '''Replace.'''
+    flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
+
+    with open(flnme_in, 'rt') as file_in, open(flnme_out, 'wt') as file_out:
+        for line in file_in:
+            line = '_DNA_VOLS = %s' % dna_concs \
+                if line.startswith('_DNA_VOLS') else line
+
+            file_out.write(line)
 
 
 def _to_tuple(row):
