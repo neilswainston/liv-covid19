@@ -77,8 +77,8 @@ def _setup(protocol):
     return therm_mod, p10_multi, reag_plt, src_plt, dst_plt
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
-          dst_plt):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
+          rna_vol=10.0):
     '''Generate cDNA.'''
     protocol.comment('\nGenerate cDNA')
 
@@ -86,11 +86,11 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
     protocol.comment('\nAdd primer mix')
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
-                        'primer_mix', 8.0)
+                        'primer_mix', 13.0 - rna_vol)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 5.0)
+    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, rna_vol)
 
     # Incubate at 65C for 5 minute:
     therm_mod.close_lid()
@@ -102,9 +102,16 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt,
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
+
+    prev_aspirate, prev_dispense, _ = \
+        _set_flow_rate(protocol, p10_multi, aspirate=3, dispense=5)
+
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
                         'rt_reaction_mix', 7.0)
+
+    _set_flow_rate(protocol, p10_multi, aspirate=prev_aspirate,
+                   dispense=prev_dispense)
 
     # Incubate at 42C for 50 minute:
     therm_mod.close_lid()
@@ -185,6 +192,31 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
                          dst,
                          mix_after=(3, vol),
                          disposal_volume=0)
+
+
+def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
+                   blow_out=None):
+    '''Set flow rates.'''
+    old_aspirate = pipette.flow_rate.aspirate
+    old_dispense = pipette.flow_rate.dispense
+    old_blow_out = pipette.flow_rate.blow_out
+
+    if aspirate and aspirate != old_aspirate:
+        protocol.comment('Updating aspirate from %i to %i'
+                         % (old_aspirate, aspirate))
+        pipette.flow_rate.aspirate = aspirate
+
+    if dispense and dispense != old_dispense:
+        protocol.comment('Updating dispense from %i to %i'
+                         % (old_dispense, dispense))
+        pipette.flow_rate.dispense = dispense
+
+    if blow_out and blow_out != old_blow_out:
+        protocol.comment('Updating blow_out from %i to %i'
+                         % (old_blow_out, blow_out))
+        pipette.flow_rate.blow_out = blow_out
+
+    return old_aspirate, old_dispense, old_blow_out
 
 
 def _get_num_cols():
