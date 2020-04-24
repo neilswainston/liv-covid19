@@ -30,10 +30,9 @@ _REAGENT_PLATE = {
                    'waste_2': 'A12'}
 }
 
-_SAMPLE_PLATE = {
-    'type': '4titude_96_wellplate_200ul',
-    'last': ['H12', 'H12']
-}
+_SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
+
+_SAMPLE_PLATE_LAST = 'H12'
 
 _MAG_PLATE = {
     'type': '4titude_96_wellplate_200ul'
@@ -45,6 +44,10 @@ def run(protocol):
     # Setup:
     mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt = \
         _setup(protocol)
+
+    # Set to next clean tip:
+    next_tip = p300_multi.tip_racks[0].rows_by_name()['A'][2]
+    p300_multi.starting_tip = next_tip
 
     # Cleanup:
     _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
@@ -67,7 +70,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [2, 3]]
+         for slot in [6, 9]]
 
     # Add pipettes:
     p300_multi = protocol.load_instrument(
@@ -77,12 +80,12 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plts = [therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR')]
+    src_plts = [therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR')]
     mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'PCR_clean')
-    clean_plt = protocol.load_labware(_SAMPLE_PLATE['type'], 6, 'final_clean')
+    clean_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 2, 'final_clean')
 
-    if len(_SAMPLE_PLATE['last']) > 1:
-        src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR2'))
+    if _get_num_cols() > 6:
+        src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR2'))
 
     return mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt
 
@@ -94,12 +97,12 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Add beads:
     protocol.comment('\nAdd beads')
-    _distribute_reagent(p300_multi, reag_plt, mag_plt, [1], 'beads', 50,
-                        return_tip=True)
+    _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
+                        'beads', 50, tip_fate='return')
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
-    dirty_tip = _pool(p300_multi, src_plts, mag_plt)
+    dirty_tip = _combine(p300_multi, src_plts, mag_plt)
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -121,10 +124,12 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
-        _distribute_reagent(p300_multi, reag_plt, mag_plt, [1],
+        _distribute_reagent(p300_multi, reag_plt, [mag_plt],
+                            1, _get_num_cols(),
                             'ethanol_%i' % (count + 1),
                             150,
-                            return_tip=count == 0, air_gap=air_gap, top=0,
+                            tip_fate='return' if count == 0 else 'drop',
+                            air_gap=air_gap, top=0,
                             blow_out=True)
 
         protocol.delay(seconds=17)
@@ -160,13 +165,13 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
     mag_deck.disengage()
 
 
-def _pool(p300_multi, src_plts, dst_plt):
+def _combine(p300_multi, src_plts, dst_plt):
     '''Pool A and B step.'''
     start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
     tip = start_tip
+    num_cols = _get_num_cols()
 
-    for src_plt_idx, (src_plt, num_cols) in \
-            enumerate(zip(src_plts, _get_num_cols())):
+    for src_plt_idx, src_plt in enumerate(src_plts):
         for col_idx in range(int(num_cols // 2)):
             p300_multi.consolidate(
                 25,
@@ -202,7 +207,7 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
     tip = start_tip
     p300_multi.starting_tip = tip
 
-    for col_idx in range(sum(_get_num_cols()) // 2):
+    for col_idx in range(_get_num_cols()):
         p300_multi.transfer(
             vol,
             src_plt.columns()[col_idx],
@@ -219,32 +224,30 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     '''Transfer samples.'''
-    num_cols = sum(_get_num_cols()) // 2
+    num_cols = _get_num_cols()
 
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.pick_up_tip()
-        pipette.aspirate(vol, src[0])
-        pipette.dispense(vol, dst[0])
-        pipette.blow_out(dst[0])
-        pipette.drop_tip()
+        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0,
+def _distribute_reagent(pipette, reag_plt,
+                        dst_plts, dst_col_start, dst_col_num,
+                        reagent, vol,
+                        tip_fate='drop', mix_before=None, air_gap=0,
                         top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     dest_cols = []
 
-    for dst_col in dst_cols:
-        dest_cols.extend(
-            dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + sum(_get_num_cols()) // 2])
+    for dst_plt in dst_plts:
+        dest_cols.extend(dst_plt.rows_by_name()['A'][
+            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
@@ -258,10 +261,10 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                        air_gap=air_gap,
                        blow_out=blow_out)
 
-    if return_tip:
-        pipette.return_tip()
-    else:
+    if tip_fate == 'drop':
         pipette.drop_tip()
+    elif tip_fate == 'return':
+        pipette.return_tip()
 
 
 def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
@@ -272,8 +275,9 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    for dst in dst_plt.columns()[
-            dst_col - 1:dst_col - 1 + (sum(_get_num_cols()) // 2)]:
+    num_cols = _get_num_cols()
+
+    for dst in dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]:
         pipette.transfer(vol,
                          reag_plt[reag_well],
                          dst,
@@ -308,7 +312,7 @@ def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return [int(last[1:]) for last in _SAMPLE_PLATE['last']]
+    return int(_SAMPLE_PLATE_LAST[1:])
 
 
 def _get_plate_well(reag_plt, reagent):

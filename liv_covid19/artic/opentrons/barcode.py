@@ -242,8 +242,12 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.return_tip()
 
 
-def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
+def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
+                      mix_after=None):
     '''Transfer reagent.'''
+    if not mix_after:
+        mix_after = (3, vol)
+
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     num_cols = _get_num_cols()
@@ -252,7 +256,7 @@ def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol):
         pipette.transfer(vol,
                          reag_plt[reag_well],
                          dst,
-                         mix_after=(3, vol),
+                         mix_after=mix_after,
                          disposal_volume=0)
 
 
