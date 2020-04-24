@@ -26,9 +26,9 @@ _REAGENT_PLATE = {
                    'endprep_mastermix': 'A9'}
 }
 
-_SAMPLE_PLATE = {
-    'type': '4titude_96_wellplate_200ul',
-}
+_SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
+
+_SAMPLE_PLATE_LAST = 'H12'
 
 _DNA_VOLS = {'A1': 3, 'H12': 1}
 
@@ -71,8 +71,8 @@ def _setup(protocol):
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
 
     # Add source, thermo and mag plates:
-    src_plt = temp_deck.load_labware(_SAMPLE_PLATE['type'], 'PCR_clean')
-    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE['type'], 'PCR_normal')
+    src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_clean')
+    therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_normal')
 
     return therm_mod, p10_single, p10_multi, reag_plt, src_plt, therm_plt
 
@@ -83,7 +83,7 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
     protocol.comment('\nNormalise DNA concentrations')
 
     # Add endprep mastermix:
-    _distribute_reagent(p10_multi, reag_plt, dst_plt, [1],
+    _distribute_reagent(p10_multi, reag_plt, [dst_plt], 1, _get_num_cols(),
                         'endprep_mastermix', 7.5)
 
     # Add water and DNA:
@@ -118,20 +118,22 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
-                        return_tip=False, mix_before=None, air_gap=0,
-                        top=None, bottom=None):
+def _distribute_reagent(pipette, reag_plt,
+                        dst_plts, dst_col_start, dst_col_num,
+                        reagent, vol,
+                        tip_fate='drop', mix_before=None, air_gap=0,
+                        top=None, bottom=None, blow_out=False):
     '''Distribute reagent.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
     dest_cols = []
 
-    for dst_col in dst_cols:
-        dest_cols.extend(
-            dst_plt.rows_by_name()['A'][
-                dst_col - 1:dst_col - 1 + _get_num_cols()])
+    for dst_plt in dst_plts:
+        dest_cols.extend(dst_plt.rows_by_name()['A'][
+            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
     pipette.distribute(vol,
                        reag_plt.wells_by_name()[reag_well],
@@ -142,17 +144,18 @@ def _distribute_reagent(pipette, reag_plt, dst_plt, dst_cols, reagent, vol,
                        new_tip='never',
                        disposal_volume=0,
                        mix_before=mix_before,
-                       air_gap=air_gap)
+                       air_gap=air_gap,
+                       blow_out=blow_out)
 
-    if return_tip:
-        pipette.return_tip()
-    else:
+    if tip_fate == 'drop':
         pipette.drop_tip()
+    elif tip_fate == 'return':
+        pipette.return_tip()
 
 
 def _get_num_cols():
     '''Get number of sample columns.'''
-    return int(list(_DNA_VOLS.keys())[-1][1:])
+    return int(_SAMPLE_PLATE_LAST[1:])
 
 
 def _get_plate_well(reag_plt, reagent):
