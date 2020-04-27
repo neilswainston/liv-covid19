@@ -32,6 +32,8 @@ _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
 _SAMPLE_PLATE_LAST = 'H12'
 
+_RNA_VOL = 10.0
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -40,7 +42,8 @@ def run(protocol):
         dst_plts = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plts[0])
+    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plts[0],
+          _RNA_VOL)
 
     # PCR:
     protocol.pause('''
@@ -98,8 +101,7 @@ def _setup(protocol):
         dst_plts
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
-          rna_vol=10.0):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     '''Generate cDNA.'''
     protocol.comment('\nGenerate cDNA')
 
