@@ -44,6 +44,9 @@ def run(in_filename, out_dir, target_mass=50):
     mosquito_df.to_csv(os.path.join(out_dir, 'mosquito.csv'),
                        index=False)
 
+    # Write Opentrons worklist:
+    _get_ot(tab_df, out_dir)
+
 
 def _get_data(in_filename):
     '''Get data.'''
@@ -114,7 +117,7 @@ def _get_ot(df, out_dir):
     dna_concs = dict(resp.tolist())
 
     # Convert:
-    py_dir = 'liv_covid19/artic/opentrons/individual/v1'
+    py_dir = 'liv_covid19/artic/opentrons/'
 
     for filename in ['normalisation.py']:
         _replace(os.path.join(py_dir, filename), out_dir, dna_concs)
