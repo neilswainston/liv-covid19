@@ -36,12 +36,10 @@ _DNA_VOLS = {'A1': 3, 'H12': 1}
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    therm_mod, p10_single, p10_multi, reag_plt, src_plt, dst_plt = \
-        _setup(protocol)
+    therm_mod, p10_multi, reag_plt, src_plt, dst_plt = _setup(protocol)
 
     # Normalise DNA concentrations:
-    _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
-               dst_plt)
+    _normalise(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
 
 
 def _setup(protocol):
@@ -58,14 +56,11 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3]]
+         for slot in [9, 6]]
 
     # Add pipettes:
     p10_multi = protocol.load_instrument(
         'p10_multi', 'left', tip_racks=tip_racks_10)
-
-    p10_single = protocol.load_instrument(
-        'p10_single', 'right', tip_racks=tip_racks_10)
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -74,11 +69,10 @@ def _setup(protocol):
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_clean')
     therm_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR_normal')
 
-    return therm_mod, p10_single, p10_multi, reag_plt, src_plt, therm_plt
+    return therm_mod, p10_multi, reag_plt, src_plt, therm_plt
 
 
-def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
-               dst_plt):
+def _normalise(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     '''Generate cDNA.'''
     protocol.comment('\nNormalise DNA concentrations')
 
@@ -91,11 +85,16 @@ def _normalise(protocol, therm_mod, p10_single, p10_multi, reag_plt, src_plt,
 
     protocol.comment('\nAdd water and DNA')
 
-    for well, vol in _DNA_VOLS.items():
-        p10_single.consolidate([7.5 - vol, vol],
-                               [reag_plt[reag_well], src_plt[well]],
-                               dst_plt[well],
-                               mix_after=(3, 7.5))
+    for idx, (well, vol) in enumerate(_DNA_VOLS.items()):
+        p10_multi.pick_up_tip(p10_multi.tip_racks[-1].wells()[-1 - idx],
+                              presses=1, increment=0)
+
+        p10_multi.aspirate(7.5 - vol, reag_plt[reag_well])
+        p10_multi.aspirate(vol, src_plt[well])
+        p10_multi.dispense(7.5, dst_plt[well])
+        p10_multi.mix(3, 7.5)
+
+        p10_multi.drop_tip()
 
     # Incubate at 20C for 5 minute:
     therm_mod.close_lid()
