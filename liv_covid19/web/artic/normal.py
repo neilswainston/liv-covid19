@@ -143,7 +143,7 @@ def _to_tuple(row):
 
 def main(args):
     '''main method.'''
-    run(args[0], args[1])
+    run(args[0], args[1], float(args[2]))
 
 
 if __name__ == '__main__':

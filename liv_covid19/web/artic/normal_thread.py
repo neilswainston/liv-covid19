@@ -28,6 +28,7 @@ class NormaliseThread(JobThread):
             fle.write(query['file_content'])
 
         self.__out_dir = out_dir
+        self.__target_mass = query['target_mass']
         JobThread.__init__(self, query, 1)
 
     def run(self):
@@ -38,7 +39,9 @@ class NormaliseThread(JobThread):
 
             self._fire_job_event('running', iteration, 'Running...')
 
-            normal.run(in_filename=self.__in_filename, out_dir=parent_dir)
+            normal.run(in_filename=self.__in_filename,
+                       out_dir=parent_dir,
+                       target_mass=self.__target_mass)
 
             iteration += 1
 

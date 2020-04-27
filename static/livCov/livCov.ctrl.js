@@ -1,7 +1,7 @@
 livCovApp.controller("livCovCtrl", ["LivCovService", function(LivCovService) {
 	var self = this;
 
-	self.query = {};
+	self.query = {"target_mass": 50.0};
 	
 	self.setApp = function(app) {
 		self.query.app = app;
