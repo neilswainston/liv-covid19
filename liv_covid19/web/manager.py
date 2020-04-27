@@ -12,7 +12,7 @@ import os.path
 from threading import Thread
 import time
 
-from liv_covid19.web.artic import postnormal_thread, opentrons_thread
+from liv_covid19.web.artic import normal_thread, opentrons_thread
 
 
 class Manager():
@@ -78,8 +78,8 @@ class Manager():
         if app == 'Opentrons':
             return opentrons_thread.OpentronsThread(query, self.__out_dir)
 
-        if app == 'PostNormalise':
-            return postnormal_thread.PostNormaliseThread(query, self.__out_dir)
+        if app == 'Normalise':
+            return normal_thread.NormaliseThread(query, self.__out_dir)
 
         raise ValueError('Unknown app: ' + app)
 

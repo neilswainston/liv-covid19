@@ -11,11 +11,11 @@ livCovApp.config(function($routeProvider, $locationProvider) {
 		controllerAs: "ctrl",
 		templateUrl: "static/opentrons/opentrons.html",
 		app: "Opentrons"
-	}).when("/postNormalise", {
+	}).when("/normalise", {
 		controller: "livCovCtrl",
 		controllerAs: "ctrl",
-		templateUrl: "static/postNormalise/postNormalise.html",
-		app: "PostNormalise"
+		templateUrl: "static/normalise/normalise.html",
+		app: "Normalise"
 	})
 	
 	// Use the HTML5 History API:
