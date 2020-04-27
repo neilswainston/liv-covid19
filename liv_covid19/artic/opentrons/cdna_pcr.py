@@ -149,7 +149,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
 
 
 def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
-         dst_plts):
+         dst_plts, cdna_vol=5.0):
     '''Do PCR.'''
     protocol.comment('\nSetup PCR')
 
@@ -161,12 +161,12 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     # Add Pool A:
     _distribute_reagent(p300_multi, reag_plt,
                         dst_plts, 1, int(_get_num_cols() / 2),
-                        'primer_pool_a_mastermix', 22.5, bottom=1.5)
+                        'primer_pool_a_mastermix', 25.0 - cdna_vol, bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt,
                         dst_plts, 7, int(_get_num_cols() / 2),
-                        'primer_pool_b_mastermix', 22.5, bottom=1.5)
+                        'primer_pool_b_mastermix', 25.0 - cdna_vol, bottom=1.5)
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
 
@@ -180,7 +180,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                    [dst_plts[plt_idx].columns()[col_idx % 6 + 6]]
 
         p10_multi.distribute(
-            2.5,
+            cdna_vol,
             src_plt.columns()[col_idx],
             dst_cols,
             mix_after=(3, 2.5),

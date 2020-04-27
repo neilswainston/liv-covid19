@@ -28,39 +28,39 @@ _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    p10_multi, src_plt, dst_plt = _setup(protocol)
+    p300_multi, src_plt, dst_plt = _setup(protocol)
 
     # Pick:
-    _pick(protocol, p10_multi, src_plt, dst_plt)
+    _pick(protocol, p300_multi, src_plt, dst_plt)
 
 
 def _setup(protocol):
     '''Setup.'''
     # Add temp deck:
-    therm_mod = protocol.load_module('thermocycler', 7)
-    therm_mod.open_lid()
-    therm_mod.set_block_temperature(4)
-    therm_mod.set_lid_temperature(105)
+    # therm_mod = protocol.load_module('thermocycler', 7)
+    # therm_mod.open_lid()
+    # therm_mod.set_block_temperature(4)
+    # therm_mod.set_lid_temperature(105)
 
     temp_deck = protocol.load_module('tempdeck', 4)
     temp_deck.set_temperature(4)
 
     # Setup tip racks:
-    tip_racks_10 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_10ul', 5)]
+    tip_racks_200 = \
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 5)]
 
     # Add pipette:
-    p10_multi = protocol.load_instrument(
-        'p10_multi', 'left', tip_racks=tip_racks_10)
+    p300_multi = protocol.load_instrument(
+        'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add plates:
     src_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 6, 'sample')
-    dst_plt = therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
+    dst_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'RNA')
 
-    return p10_multi, src_plt, dst_plt
+    return p300_multi, src_plt, dst_plt
 
 
-def _pick(protocol, p10_multi, src_plt, dst_plt):
+def _pick(protocol, p300_multi, src_plt, dst_plt, rna_vol=30.0):
     '''Pick.'''
     # Add RNA samples:
     protocol.comment('\nPick RNA samples')
@@ -74,12 +74,12 @@ def _pick(protocol, p10_multi, src_plt, dst_plt):
         src_plt.name = src_plt_name
 
         for src_well in src_wells:
-            p10_multi.pick_up_tip(p10_multi.tip_racks[0].wells()[tip_idx],
-                                  presses=1, increment=0)
+            p300_multi.pick_up_tip(p300_multi.tip_racks[0].wells()[tip_idx],
+                                   presses=1, increment=0)
 
-            p10_multi.aspirate(5.0, src_plt[src_well])
-            p10_multi.dispense(5.0, dst_plt.wells()[dst_well_idx])
-            p10_multi.drop_tip()
+            p300_multi.aspirate(rna_vol, src_plt[src_well])
+            p300_multi.dispense(rna_vol, dst_plt.wells()[dst_well_idx])
+            p300_multi.drop_tip()
             tip_idx -= 1
             dst_well_idx += 1
 
