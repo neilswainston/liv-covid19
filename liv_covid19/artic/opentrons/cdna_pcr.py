@@ -109,7 +109,8 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     protocol.comment('\nAdd primer mix')
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
-                        'primer_mix', 13.0 - rna_vol)
+                        'primer_mix', 13.0 - rna_vol,
+                        tip_fate='return')
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -129,9 +130,9 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     prev_aspirate, prev_dispense, _ = \
         _set_flow_rate(protocol, p10_multi, aspirate=3, dispense=5)
 
-    _distribute_reagent(p10_multi, reag_plt,
-                        [dst_plt], 1, _get_num_cols(),
-                        'rt_reaction_mix', 7.0)
+    _transfer_reagent(p10_multi, reag_plt,
+                      dst_plt, 1,
+                      'rt_reaction_mix', 7.0)
 
     _set_flow_rate(protocol, p10_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)
@@ -206,7 +207,7 @@ def _do_pcr(therm_mod):
 
     profile = [
         {'temperature': 98, 'hold_time_seconds': 15},
-        {'temperature': 65, 'hold_time_seconds': 5}
+        {'temperature': 65, 'hold_time_minutes': 5}
     ]
 
     therm_mod.execute_profile(steps=profile, repetitions=30,
