@@ -38,9 +38,6 @@ def run(protocol):
         therm_plt = _setup(protocol)
 
     # Set to next clean tip:
-    next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
-    p10_multi.starting_tip = next_tip_10
-
     next_tip_300 = p300_multi.tip_racks[0].rows_by_name()['A'][2]
     p300_multi.starting_tip = next_tip_300
 
@@ -63,7 +60,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [3, 2]]
+         for slot in [2, 3]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
