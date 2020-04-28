@@ -45,8 +45,8 @@ def run(protocol):
         pool_plt = _setup(protocol)
 
     # Set to next clean tip:
-    next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
-    p10_multi.starting_tip = next_tip_10
+    # next_tip_10 = p10_multi.tip_racks[0].rows_by_name()['A'][2]
+    # p10_multi.starting_tip = next_tip_10
 
     # Barcode ligation:
     _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt)
@@ -69,7 +69,7 @@ def _setup(protocol):
     # Setup tip racks:
     tip_racks_10 = \
         [protocol.load_labware('opentrons_96_filtertiprack_10ul', slot)
-         for slot in [2, 3, 1]]
+         for slot in [1, 2, 3]]
 
     tip_racks_200 = \
         [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
