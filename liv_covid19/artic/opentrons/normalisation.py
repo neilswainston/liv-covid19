@@ -121,7 +121,9 @@ def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
                         tip_fate='drop', mix_before=None, air_gap=0,
-                        top=None, bottom=None, blow_out=False):
+                        asp_top=None, asp_bottom=None,
+                        disp_top=None, disp_bottom=None,
+                        blow_out=False):
     '''Distribute reagent.'''
     if not pipette.hw_pipette['has_tip']:
         pipette.pick_up_tip()
@@ -134,10 +136,16 @@ def _distribute_reagent(pipette, reag_plt,
         dest_cols.extend(dst_plt.rows_by_name()['A'][
             dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
+    asp_well = reag_plt.wells_by_name()[reag_well]
+
     pipette.distribute(vol,
-                       reag_plt.wells_by_name()[reag_well],
-                       [well.top(top) if top is not None
-                        else (well.bottom(bottom) if bottom is not None
+                       asp_well.top(asp_top) if asp_top is not None
+                       else (asp_well.bottom(asp_bottom)
+                             if asp_bottom is not None
+                             else asp_well),
+                       [well.top(disp_top) if disp_top is not None
+                        else (well.bottom(disp_bottom)
+                              if disp_bottom is not None
                               else well)
                         for well in dest_cols],
                        new_tip='never',
