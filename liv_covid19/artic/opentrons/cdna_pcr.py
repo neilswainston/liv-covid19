@@ -21,7 +21,7 @@ metadata = {'apiLevel': '2.1',
             'description': 'simple'}
 
 _REAGENT_PLATE = {
-    'type': 'nest_12_reservoir_15ml',
+    'type': '4titude_96_wellplate_1000ul',
     'components': {'primer_mix': 'A1',
                    'rt_reaction_mix': 'A2',
                    'primer_pool_a_mastermix': 'A3',
@@ -69,7 +69,7 @@ def _setup(protocol):
     therm_mod.set_lid_temperature(105)
 
     temp_deck = protocol.load_module('tempdeck', 4)
-    temp_deck.set_temperature(4)
+    temp_deck.set_temperature(6)
 
     # Setup tip racks:
     tip_racks_10 = \
@@ -121,7 +121,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     _incubate(therm_mod, 65, 5, lid_temp=105)
 
     # Incubate (on ice) / at min temp for 1 minute:
-    _incubate(therm_mod, 8, 1)
+    _incubate(therm_mod, 4, 1)
     therm_mod.open_lid()
 
     # Add RT reaction mix:
@@ -145,7 +145,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     _incubate(therm_mod, 70, 10, lid_temp=105)
 
     # Incubate at 4C for 1 minute:
-    _incubate(therm_mod, 8, 1, lid_temp=105)
+    _incubate(therm_mod, 4, 1, lid_temp=105)
     therm_mod.open_lid()
 
 
@@ -162,12 +162,14 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     # Add Pool A:
     _distribute_reagent(p300_multi, reag_plt,
                         dst_plts, 1, int(_get_num_cols() / 2),
-                        'primer_pool_a_mastermix', 25.0 - cdna_vol, bottom=1.5)
+                        'primer_pool_a_mastermix', 25.0 - cdna_vol,
+                        asp_bottom=1.5, disp_bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt,
                         dst_plts, 7, int(_get_num_cols() / 2),
-                        'primer_pool_b_mastermix', 25.0 - cdna_vol, bottom=1.5)
+                        'primer_pool_b_mastermix', 25.0 - cdna_vol,
+                        asp_bottom=1.5, disp_bottom=1.5)
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
 
@@ -195,8 +197,8 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     protocol.comment('\nPerform PCR')
     _do_pcr(therm_mod)
 
-    # Incubate at 8C for 1 minute:
-    _incubate(therm_mod, 8, 1)
+    # Incubate at 4C for 1 minute:
+    _incubate(therm_mod, 4, 1)
 
 
 def _do_pcr(therm_mod):
@@ -210,10 +212,10 @@ def _do_pcr(therm_mod):
         {'temperature': 65, 'hold_time_minutes': 5}
     ]
 
-    therm_mod.execute_profile(steps=profile, repetitions=30,
+    therm_mod.execute_profile(steps=profile, repetitions=31,
                               block_max_volume=25)
 
-    therm_mod.open_lid()
+    # therm_mod.open_lid()
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
@@ -240,7 +242,9 @@ def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
                         tip_fate='drop', mix_before=None, air_gap=0,
-                        top=None, bottom=None, blow_out=False):
+                        asp_top=None, asp_bottom=None,
+                        disp_top=None, disp_bottom=None,
+                        blow_out=False):
     '''Distribute reagent.'''
     if not pipette.hw_pipette['has_tip']:
         pipette.pick_up_tip()
@@ -253,10 +257,16 @@ def _distribute_reagent(pipette, reag_plt,
         dest_cols.extend(dst_plt.rows_by_name()['A'][
             dst_col_start - 1:dst_col_start - 1 + dst_col_num])
 
+    asp_well = reag_plt.wells_by_name()[reag_well]
+
     pipette.distribute(vol,
-                       reag_plt.wells_by_name()[reag_well],
-                       [well.top(top) if top is not None
-                        else (well.bottom(bottom) if bottom is not None
+                       asp_well.top(asp_top) if asp_top is not None
+                       else (asp_well.bottom(asp_bottom)
+                             if asp_bottom is not None
+                             else asp_well),
+                       [well.top(disp_top) if disp_top is not None
+                        else (well.bottom(disp_bottom)
+                              if disp_bottom is not None
                               else well)
                         for well in dest_cols],
                        new_tip='never',
