@@ -21,7 +21,7 @@ metadata = {'apiLevel': '2.1',
             'description': 'simple'}
 
 _REAGENT_PLATE = {
-    'type': 'nest_12_reservoir_15ml',
+    'type': '4titude_96_wellplate_2200ul',
     'components': {'beads': 'A5',
                    'ethanol_1': 'A6',
                    'ethanol_2': 'A7',
