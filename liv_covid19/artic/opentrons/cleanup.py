@@ -97,8 +97,16 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Add beads:
     protocol.comment('\nAdd beads')
+
+    # Slow flow rates:
+    old_aspirate, old_dispense, _ = \
+        _set_flow_rate(protocol, p300_multi, aspirate=50, dispense=100)
+
     _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
-                        'beads', 50, tip_fate='return')
+                        'beads', 50, tip_fate='return', mix_before=(3, 50))
+
+    _set_flow_rate(protocol, p300_multi,
+                   aspirate=old_aspirate, dispense=old_dispense)
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
