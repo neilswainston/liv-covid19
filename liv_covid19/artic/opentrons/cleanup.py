@@ -208,7 +208,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, dest)
 
@@ -216,18 +216,35 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest, air_gap=0):
     p300_multi.starting_tip = tip
 
     for col_idx in range(_get_num_cols()):
-        p300_multi.transfer(
-            vol,
-            src_plt.columns()[col_idx],
-            waste_plt[waste].top(),
-            trash=False,
-            disposal_volume=0,
-            air_gap=air_gap)
+        p300_multi.pick_up_tip()
 
-        p300_multi.blow_out(waste_plt[waste].top())
+        max_vol = p300_multi._last_tip_picked_up_from.max_volume
+
+        for _ in range(vol // max_vol):
+            _to_waste_aliquot(p300_multi,
+                              src_plt.columns()[col_idx][0],
+                              waste_plt[waste].top(),
+                              max_vol)
+
+        vol_remain = vol % max_vol
+
+        if vol_remain:
+            _to_waste_aliquot(p300_multi,
+                              src_plt.columns()[col_idx][0],
+                              waste_plt[waste].top(),
+                              vol_remain)
+
+        p300_multi.return_tip()
 
         tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
         p300_multi.starting_tip = tip
+
+
+def _to_waste_aliquot(pipette, src_well, waste_well, vol):
+    '''Move aliquot to waste.'''
+    pipette.aspirate(vol, src_well)
+    pipette.dispense(vol, waste_well)
+    pipette.blow_out(waste_well)
 
 
 def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
