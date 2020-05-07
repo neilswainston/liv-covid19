@@ -103,7 +103,8 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
         _set_flow_rate(protocol, p300_multi, aspirate=50, dispense=100)
 
     _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
-                        'beads', 50, tip_fate='return', mix_before=(3, 50))
+                        'beads', 50, tip_fate='return', mix_before=(3, 50),
+                        shake_before=(3, 10))
 
     _set_flow_rate(protocol, p300_multi,
                    aspirate=old_aspirate, dispense=old_dispense)
@@ -127,8 +128,6 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
     _to_waste(p300_multi, mag_plt, reag_plt, 75, dirty_tip, dest='waste_1')
 
     # Wash twice with ethanol:
-    air_gap = p300_multi.max_volume * 0.1
-
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
@@ -137,7 +136,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
                             'ethanol_%i' % (count + 1),
                             150,
                             tip_fate='return' if count == 0 else 'drop',
-                            air_gap=air_gap, disp_top=0,
+                            disp_top=0,
                             blow_out=True)
 
         protocol.delay(seconds=17)
@@ -260,7 +259,9 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
 def _distribute_reagent(pipette, reag_plt,
                         dst_plts, dst_col_start, dst_col_num,
                         reagent, vol,
-                        tip_fate='drop', mix_before=None, air_gap=0,
+                        tip_fate='drop',
+                        mix_before=None,
+                        shake_before=None,
                         asp_top=None, asp_bottom=None,
                         disp_top=None, disp_bottom=None,
                         blow_out=False):
@@ -278,26 +279,57 @@ def _distribute_reagent(pipette, reag_plt,
 
     asp_well = reag_plt.wells_by_name()[reag_well]
 
-    pipette.distribute(vol,
-                       asp_well.top(asp_top) if asp_top is not None
-                       else (asp_well.bottom(asp_bottom)
-                             if asp_bottom is not None
-                             else asp_well),
-                       [well.top(disp_top) if disp_top is not None
-                        else (well.bottom(disp_bottom)
-                              if disp_bottom is not None
-                              else well)
-                        for well in dest_cols],
-                       new_tip='never',
-                       disposal_volume=0,
-                       mix_before=mix_before,
-                       air_gap=air_gap,
-                       blow_out=blow_out)
+    _distribute(pipette,
+                asp_well.top(asp_top) if asp_top is not None
+                else (asp_well.bottom(asp_bottom)
+                      if asp_bottom is not None
+                      else asp_well),
+                [well.top(disp_top) if disp_top is not None
+                 else (well.bottom(disp_bottom)
+                       if disp_bottom is not None
+                       else well)
+                 for well in dest_cols],
+                vol,
+                mix_before,
+                shake_before,
+                blow_out)
 
     if tip_fate == 'drop':
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+
+
+def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
+                blow_out):
+    '''Distribute.'''
+    max_asps = int(pipette._last_tip_picked_up_from.max_volume // vol)
+
+    aliquot_disps = [disp_pos[i:i + max_asps]
+                     for i in range(0, len(disp_pos), max_asps)]
+
+    for aliquot_disp in aliquot_disps:
+        # Mix:
+        if mix_before:
+            pipette.mix(*mix_before, asp_pos)
+
+        # Aspirate:
+        asp_vol = vol * len(aliquot_disp)
+        pipette.aspirate(asp_vol, asp_pos)
+
+        # Shake:
+        if shake_before:
+            for _ in range(shake_before[0]):
+                pipette.move_to(asp_pos.top(shake_before[1]))
+                pipette.move_to(asp_pos.top())
+
+        # Dispense:
+        for pos in aliquot_disp:
+            pipette.dispense(vol, pos)
+
+        # Blow-out:
+        if blow_out:
+            pipette.blow_out()
 
 
 def _transfer_reagent(pipette, reag_plt, dst_plt, dst_col, reagent, vol,
