@@ -42,16 +42,13 @@ _MAG_PLATE = {
 def run(protocol):
     '''Run protocol.'''
     # Setup:
-    mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt = \
-        _setup(protocol)
-
-    # Set to next clean tip:
-    next_tip = p300_multi.tip_racks[0].rows_by_name()['A'][2]
-    p300_multi.starting_tip = next_tip
+    temp_deck, mag_deck, p300_multi, tip_racks_200, reag_plt, src_plts, \
+        mag_plt = _setup(protocol)
 
     # Cleanup:
-    _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
-             clean_plt, engage_height=mag_plt._dimensions['zDimension'])
+    _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
+             reag_plt, src_plts, mag_plt,
+             engage_height=mag_plt._dimensions['zDimension'])
 
 
 def _setup(protocol):
@@ -69,12 +66,13 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
-         for slot in [6, 9]]
+        {slot: protocol.load_labware('opentrons_96_filtertiprack_200ul', slot)
+         for slot in [6, 9, 3, 2]}
 
     # Add pipettes:
     p300_multi = protocol.load_instrument(
-        'p300_multi', 'right', tip_racks=tip_racks_200)
+        'p300_multi', 'right',
+        tip_racks=list(tip_racks_200.values()))
 
     # Add reagent plate:
     reag_plt = protocol.load_labware(_REAGENT_PLATE['type'], 5)
@@ -82,16 +80,17 @@ def _setup(protocol):
     # Add source, thermo and mag plates:
     src_plts = [therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR')]
     mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'PCR_clean')
-    clean_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 2, 'final_clean')
+    # clean_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 2, 'final_clean')
 
     if _get_num_cols() > 6:
         src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR2'))
 
-    return mag_deck, p300_multi, reag_plt, src_plts, mag_plt, clean_plt
+    return temp_deck, mag_deck, p300_multi, tip_racks_200, \
+        reag_plt, src_plts, mag_plt
 
 
-def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
-             clean_plt, engage_height):
+def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
+             reag_plt, src_plts, mag_plt, engage_height):
     '''Clean-up.'''
     protocol.comment('\nClean-up')
 
@@ -102,16 +101,21 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
     old_aspirate, old_dispense, _ = \
         _set_flow_rate(protocol, p300_multi, aspirate=50, dispense=100)
 
+    # Rack 6:
+    p300_multi.starting_tip = tip_racks_200[6].rows_by_name()['A'][2]
+
     _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
-                        'beads', 50, tip_fate='return', mix_before=(3, 50),
-                        shake_before=(3, 10))
+                        'beads', 50, mix_before=(3, 50), shake_before=(3, 10))
 
     _set_flow_rate(protocol, p300_multi,
                    aspirate=old_aspirate, dispense=old_dispense)
 
     # Combine Pool A and Pool B:
     protocol.comment('\nCombine Pool A and Pool B')
-    dirty_tip = _combine(p300_multi, src_plts, mag_plt)
+
+    # Rack 2:
+    p300_multi.starting_tip = tip_racks_200[2].wells()[0]
+    _combine(p300_multi, src_plts, mag_plt)
 
     # Incubate 10 minutes:
     protocol.delay(minutes=10)
@@ -125,25 +129,37 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Remove supernatant from magnetic beads:
     protocol.comment('\nRemove supernatant')
-    _to_waste(p300_multi, mag_plt, reag_plt, 75, dirty_tip, dest='waste_1')
+
+    # Rack 2:
+    p300_multi.starting_tip = tip_racks_200[2].wells()[0]
+
+    _to_waste(p300_multi, mag_plt, reag_plt, 75, tip_fate='return',
+              dest='waste_1')
 
     # Wash twice with ethanol:
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
+        # Rack 6:
+        p300_multi.starting_tip = tip_racks_200[6].next_tip()
+
         _distribute_reagent(p300_multi, reag_plt, [mag_plt],
                             1, _get_num_cols(),
                             'ethanol_%i' % (count + 1),
                             150,
-                            tip_fate='return' if count == 0 else 'drop',
                             disp_top=0,
+                            tip_fate='return' if count == 0 else 'drop',
                             blow_out=True)
 
         protocol.delay(seconds=17)
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
-        _to_waste(p300_multi, mag_plt, reag_plt, 250, dirty_tip,
-                  # air_gap=air_gap,
+
+        # Rack 9:
+        p300_multi.starting_tip = tip_racks_200[9].wells()[0]
+
+        _to_waste(p300_multi, mag_plt, reag_plt, 250,
+                  tip_fate='return' if count == 0 else 'drop',
                   dest='waste_%i' % (count + 1))
 
     # Dry:
@@ -154,6 +170,10 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Resuspend in water:
     protocol.comment('\nResuspend in water')
+
+    # Rack 3:
+    p300_multi.starting_tip = tip_racks_200[3].wells()[0]
+
     _transfer_reagent(p300_multi, reag_plt, mag_plt, 1, 'water', 20,
                       mix_after=(10, 20))
 
@@ -166,7 +186,25 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
     # Transfer clean product to a new plate:
     protocol.comment('\nTransfer clean product')
-    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 7, 15)
+
+    if _get_num_cols() > 6:
+        # Manually update deck:
+        protocol.pause('''
+            Remove %s.
+            Add new %s to %s.
+        ''' % (src_plts[-1],
+               _SAMPLE_PLATE_TYPE, temp_deck.labware.parent._display_name))
+
+        clean_plt = src_plts[-1]
+    else:
+        clean_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE)
+
+    clean_plt.name = 'final_clean'
+
+    # Rack 2:
+    p300_multi.starting_tip = tip_racks_200[2].wells()[0]
+
+    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 1, 15)
 
     # Disengage MagDeck:
     mag_deck.disengage()
@@ -174,8 +212,7 @@ def _cleanup(protocol, mag_deck, p300_multi, reag_plt, src_plts, mag_plt,
 
 def _combine(p300_multi, src_plts, dst_plt):
     '''Pool A and B step.'''
-    start_tip = [rack.next_tip() for rack in p300_multi.tip_racks][0]
-    tip = start_tip
+    tip = p300_multi.starting_tip
     num_cols = _get_num_cols()
 
     for src_plt_idx, src_plt in enumerate(src_plts):
@@ -188,13 +225,8 @@ def _combine(p300_multi, src_plts, dst_plt):
                 trash=False,
                 disposal_volume=0)
 
-            tip_idx = int(tip.display_name.split()[0][1:])
-
-            if tip_idx < len(tip.parent.rows_by_name()['A']):
-                tip = tip.parent.rows_by_name()['A'][tip_idx]
-                p300_multi.starting_tip = tip
-
-    return start_tip
+            tip = _next_tip(tip)
+            p300_multi.starting_tip = tip
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
@@ -207,12 +239,11 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return'):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, dest)
 
-    tip = start_tip
-    p300_multi.starting_tip = tip
+    tip = p300_multi.starting_tip
 
     for col_idx in range(_get_num_cols()):
         p300_multi.pick_up_tip()
@@ -233,10 +264,25 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, start_tip, dest):
                               waste_plt[waste].top(),
                               vol_remain)
 
-        p300_multi.return_tip()
+        if tip_fate == 'drop':
+            p300_multi.drop_tip()
+        elif tip_fate == 'return':
+            p300_multi.return_tip()
 
-        tip = tip.parent.rows_by_name()['A'][int(tip.display_name[1])]
+        tip = _next_tip(tip)
         p300_multi.starting_tip = tip
+
+
+def _next_tip(tip):
+    '''Get next tip.'''
+    try:
+        tip_idx = int(tip.display_name.split()[0][1:])
+        tip = tip.parent.rows_by_name()['A'][tip_idx]
+    except IndexError:
+        # End of plate...
+        tip = None
+
+    return tip
 
 
 def _to_waste_aliquot(pipette, src_well, waste_well, vol):
