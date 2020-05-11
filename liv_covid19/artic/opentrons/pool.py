@@ -159,6 +159,7 @@ def _distribute_reagent(pipette, reag_plt,
                         tip_fate='drop',
                         mix_before=None,
                         shake_before=None,
+                        air_gap=0,
                         asp_top=None, asp_bottom=None,
                         disp_top=None, disp_bottom=None,
                         blow_out=False):
@@ -187,6 +188,7 @@ def _distribute_reagent(pipette, reag_plt,
                        else well)
                  for well in dest_cols],
                 vol,
+                air_gap,
                 mix_before,
                 shake_before,
                 blow_out)
@@ -197,8 +199,8 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.return_tip()
 
 
-def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
-                blow_out):
+def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,
+                shake_before, blow_out):
     '''Distribute.'''
     max_asps = int(pipette._last_tip_picked_up_from.max_volume // vol)
 
@@ -214,6 +216,10 @@ def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
         asp_vol = vol * len(aliquot_disp)
         pipette.aspirate(asp_vol, asp_pos)
 
+        # Air-gap:
+        if air_gap:
+            pipette.air_gap(air_gap)
+
         # Shake:
         if shake_before:
             for _ in range(shake_before[0]):
@@ -222,7 +228,7 @@ def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
 
         # Dispense:
         for pos in aliquot_disp:
-            pipette.dispense(vol, pos)
+            pipette.dispense(vol + air_gap, pos)
 
         # Blow-out:
         if blow_out:
