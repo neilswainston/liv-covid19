@@ -106,7 +106,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     p300_multi.starting_tip = tip_racks_200[6].rows_by_name()['A'][2]
 
     _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
-                        'beads', 50, mix_before=(3, 50), shake_before=(3, 10))
+                        'beads', 50, mix_before=(5, 150), shake_before=(3, 10))
 
     _set_flow_rate(protocol, p300_multi,
                    aspirate=old_aspirate, dispense=old_dispense)
@@ -134,7 +134,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Rack 2:
     p300_multi.starting_tip = tip_racks_200[2].wells()[0]
 
-    _to_waste(p300_multi, mag_plt, reag_plt, 75, tip_fate='return',
+    _to_waste(p300_multi, mag_plt, reag_plt, 120, tip_fate='return',
               dest='waste_1')
 
     # Wash twice with ethanol:
@@ -156,8 +156,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
 
         protocol.comment('\nEthanol waste #%i' % (count + 1))
 
-        # Rack 9:
-        p300_multi.starting_tip = tip_racks_200[9].wells()[0]
+        # Rack 2:
+        p300_multi.starting_tip = tip_racks_200[2].wells()[0]
 
         _to_waste(p300_multi, mag_plt, reag_plt, 250,
                   tip_fate='return' if count == 0 else 'drop',
@@ -203,8 +203,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Transfer clean product to a new plate:
     protocol.comment('\nTransfer clean product')
 
-    # Rack 2:
-    p300_multi.starting_tip = tip_racks_200[2].wells()[0]
+    # Rack 9:
+    p300_multi.starting_tip = tip_racks_200[9].wells()[0]
 
     _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 1, 15)
 
@@ -301,7 +301,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
+        pipette.transfer(vol, src, dst, disposal_volume=0)
 
 
 def _distribute_reagent(pipette, reag_plt,
