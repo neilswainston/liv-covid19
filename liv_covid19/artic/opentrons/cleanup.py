@@ -26,8 +26,9 @@ _REAGENT_PLATE = {
                    'ethanol_1': 'A6',
                    'ethanol_2': 'A7',
                    'water': 'A8',
-                   'waste_1': 'A11',
-                   'waste_2': 'A12'}
+                   'waste_1': 'A10',
+                   'waste_2': 'A11',
+                   'waste_3': 'A12'}
 }
 
 _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
@@ -141,7 +142,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
         protocol.comment('\nEthanol #%i' % (count + 1))
 
         # Rack 6:
-        p300_multi.starting_tip = tip_racks_200[6].next_tip()
+        p300_multi.starting_tip = tip_racks_200[6].rows_by_name()['A'][3]
 
         _distribute_reagent(p300_multi, reag_plt, [mag_plt],
                             1, _get_num_cols(),
@@ -160,7 +161,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
 
         _to_waste(p300_multi, mag_plt, reag_plt, 250,
                   tip_fate='return' if count == 0 else 'drop',
-                  dest='waste_%i' % (count + 1))
+                  dest='waste_%i' % (count + 2))
 
     # Dry:
     protocol.delay(seconds=30)
@@ -180,15 +181,9 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Incubate:
     protocol.delay(minutes=2)
 
-    # Elute:
-    mag_deck.engage(height=engage_height)
-    protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
-
-    # Transfer clean product to a new plate:
-    protocol.comment('\nTransfer clean product')
-
+    # Manually update deck?
     if _get_num_cols() > 6:
-        # Manually update deck:
+
         protocol.pause('''
             Remove %s.
             Add new %s to %s.
@@ -200,6 +195,13 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
         clean_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE)
 
     clean_plt.name = 'final_clean'
+
+    # Elute:
+    mag_deck.engage(height=engage_height)
+    protocol.delay(minutes=3)  # "Until eluate is clear and colourless"
+
+    # Transfer clean product to a new plate:
+    protocol.comment('\nTransfer clean product')
 
     # Rack 2:
     p300_multi.starting_tip = tip_racks_200[2].wells()[0]
