@@ -81,7 +81,6 @@ def _setup(protocol):
     # Add source, thermo and mag plates:
     src_plts = [therm_mod.load_labware(_SAMPLE_PLATE_TYPE, 'PCR')]
     mag_plt = mag_deck.load_labware(_MAG_PLATE['type'], 'PCR_clean')
-    # clean_plt = protocol.load_labware(_SAMPLE_PLATE_TYPE, 2, 'final_clean')
 
     if _get_num_cols() > 6:
         src_plts.append(temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'PCR2'))
@@ -138,6 +137,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
               dest='waste_1')
 
     # Wash twice with ethanol:
+    air_gap = p300_multi.max_volume * 0.1
+
     for count in range(2):
         protocol.comment('\nEthanol #%i' % (count + 1))
 
@@ -148,6 +149,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
                             1, _get_num_cols(),
                             'ethanol_%i' % (count + 1),
                             150,
+                            air_gap=air_gap,
                             disp_top=0,
                             tip_fate='return' if count == 0 else 'drop',
                             blow_out=True)
@@ -310,6 +312,7 @@ def _distribute_reagent(pipette, reag_plt,
                         tip_fate='drop',
                         mix_before=None,
                         shake_before=None,
+                        air_gap=0,
                         asp_top=None, asp_bottom=None,
                         disp_top=None, disp_bottom=None,
                         blow_out=False):
@@ -338,6 +341,7 @@ def _distribute_reagent(pipette, reag_plt,
                        else well)
                  for well in dest_cols],
                 vol,
+                air_gap,
                 mix_before,
                 shake_before,
                 blow_out)
@@ -348,8 +352,8 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.return_tip()
 
 
-def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
-                blow_out):
+def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,
+                shake_before, blow_out):
     '''Distribute.'''
     max_asps = int(pipette._last_tip_picked_up_from.max_volume // vol)
 
@@ -365,6 +369,10 @@ def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
         asp_vol = vol * len(aliquot_disp)
         pipette.aspirate(asp_vol, asp_pos)
 
+        # Air-gap:
+        if air_gap:
+            pipette.air_gap(air_gap)
+
         # Shake:
         if shake_before:
             for _ in range(shake_before[0]):
@@ -373,7 +381,7 @@ def _distribute(pipette, asp_pos, disp_pos, vol, mix_before, shake_before,
 
         # Dispense:
         for pos in aliquot_disp:
-            pipette.dispense(vol, pos)
+            pipette.dispense(vol + air_gap, pos)
 
         # Blow-out:
         if blow_out:
