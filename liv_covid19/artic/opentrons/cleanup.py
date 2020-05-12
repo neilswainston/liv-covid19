@@ -163,7 +163,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
 
         _to_waste(p300_multi, mag_plt, reag_plt, 250,
                   tip_fate='return' if count == 0 else 'drop',
-                  dest='waste_%i' % (count + 2))
+                  dest='waste_%i' % (count + 2),
+                  air_gap=air_gap)
 
     # Dry:
     protocol.delay(seconds=30)
@@ -243,7 +244,8 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return'):
+def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return',
+              air_gap=0):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, dest)
 
@@ -252,13 +254,14 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return'):
     for col_idx in range(_get_num_cols()):
         p300_multi.pick_up_tip()
 
-        max_vol = p300_multi._last_tip_picked_up_from.max_volume
+        max_vol = p300_multi._last_tip_picked_up_from.max_volume - air_gap
 
-        for _ in range(vol // max_vol):
+        for _ in range(int(vol // max_vol)):
             _to_waste_aliquot(p300_multi,
                               src_plt.columns()[col_idx][0],
                               waste_plt[waste].top(),
-                              max_vol)
+                              max_vol,
+                              air_gap)
 
         vol_remain = vol % max_vol
 
@@ -266,7 +269,8 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return'):
             _to_waste_aliquot(p300_multi,
                               src_plt.columns()[col_idx][0],
                               waste_plt[waste].top(),
-                              vol_remain)
+                              vol_remain,
+                              air_gap)
 
         if tip_fate == 'drop':
             p300_multi.drop_tip()
@@ -289,10 +293,14 @@ def _next_tip(tip):
     return tip
 
 
-def _to_waste_aliquot(pipette, src_well, waste_well, vol):
+def _to_waste_aliquot(pipette, src_well, waste_well, vol, air_gap):
     '''Move aliquot to waste.'''
     pipette.aspirate(vol, src_well)
-    pipette.dispense(vol, waste_well)
+
+    if air_gap:
+        pipette.air_gap(air_gap)
+
+    pipette.dispense(vol + air_gap, waste_well)
     pipette.blow_out(waste_well)
 
 
