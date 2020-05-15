@@ -215,21 +215,26 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     mag_deck.disengage()
 
 
-def _combine(p300_multi, src_plts, dst_plt):
+def _combine(p300_multi, src_plts, dst_plt, asp_bottom=10):
     '''Pool A and B step.'''
     tip = p300_multi.starting_tip
     num_cols = _get_num_cols()
 
     for src_plt_idx, src_plt in enumerate(src_plts):
         for col_idx in range(int(num_cols // 2)):
+            # These are the column pairs that we're combining, e.g. A1 and A7:
+            column_pairs = [src_plt.columns()[idx]
+                            for idx in [col_idx, col_idx + 6]]
+
+            src_wells = [col[0].bottom(asp_bottom) for col in column_pairs]
+
             p300_multi.consolidate(
                 25,
-                [src_plt.columns()[idx] for idx in [col_idx, col_idx + 6]],
+                src_wells,
                 dst_plt.columns()[col_idx + (src_plt_idx * 6)],
                 mix_after=(3, 50.0),
                 trash=False,
                 disposal_volume=0)
-
             tip = _next_tip(tip)
             p300_multi.starting_tip = tip
 
