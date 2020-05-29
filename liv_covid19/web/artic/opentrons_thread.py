@@ -27,6 +27,8 @@ class OpentronsThread(JobThread):
         with open(self.__in_filename, 'w') as fle:
             fle.write(query['file_content'])
 
+        self.__temp_deck = query['temp_deck']
+
         self.__out_dir = out_dir
         JobThread.__init__(self, query, 1)
 
@@ -39,6 +41,7 @@ class OpentronsThread(JobThread):
             self._fire_job_event('running', iteration, 'Running...')
 
             opentrons.run(in_filename=self.__in_filename,
+                          temp_deck=self.__temp_deck,
                           out_dir=parent_dir)
 
             iteration += 1

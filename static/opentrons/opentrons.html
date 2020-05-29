@@ -29,9 +29,20 @@
 							</label>
 						</div>
 					</div>
+					<div class="form-group">
+						<label class="col-xs-4 col-form-label">Temperature module:</label>
+						<div class="col-xs-8">
+							<select class="form-control"
+								data-ng-model="ctrl.query.temp_deck"
+								required>
+							  <option value="Temperature Module" selected>Temperature Module Gen1</option>
+							  <option value="Temperature Module Gen2">Temperature Module Gen2</option>
+							</select>
+						</div>
+					</div>
 				</form>
 				<div>
-					(Ensure file is a csv file of this <a href="static/opentrons/example_sample_file.csv" target="_out">format</a>.)
+					(Ensure samples file is a csv file of this <a href="static/opentrons/example_sample_file.csv" target="_out">format</a>.)
 				</div>
 			</div>
 		</div>

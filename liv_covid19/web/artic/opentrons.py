@@ -16,7 +16,7 @@ import uuid
 import pandas as pd
 
 
-def run(in_filename, out_dir):
+def run(in_filename, temp_deck, out_dir):
     '''run.'''
     df = pd.read_csv(in_filename, dtype={'id': object, 'plate_id': object})
 
@@ -46,9 +46,10 @@ def run(in_filename, out_dir):
         for key, grp_df in df[df['status'] != 'NEG'].groupby('plate_id')}
 
     for filename in [
-            'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'picker.py', 'pool.py']:
+            'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'normalisation.py',
+            'picker.py', 'pool.py']:
         _replace(os.path.join('liv_covid19/artic/opentrons/', filename),
-                 out_dir, rna_plate_wells, last_well)
+                 out_dir, rna_plate_wells, last_well, temp_deck)
 
 
 def _get_wells(df):
@@ -66,7 +67,7 @@ def get_well_pos(idx, shape=(8, 12)):
     return row + str(col)
 
 
-def _replace(flnme_in, out_dir, rna_plate_wells, last_well):
+def _replace(flnme_in, out_dir, rna_plate_wells, last_well, temp_deck):
     '''Replace.'''
     flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
 
@@ -78,12 +79,15 @@ def _replace(flnme_in, out_dir, rna_plate_wells, last_well):
             line = '_RNA_PLATE_WELLS = %s' % rna_plate_wells \
                 if line.startswith('_RNA_PLATE_WELLS') else line
 
+            line = '_TEMP_DECK = \'%s\'' % temp_deck \
+                if line.startswith('_TEMP_DECK') else line
+
             file_out.write(line)
 
 
 def main(args):
     '''main method.'''
-    run(args[0], args[1])
+    run(args[0], args[1], args[2])
 
 
 if __name__ == '__main__':
