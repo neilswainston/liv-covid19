@@ -110,7 +110,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     # Add barcodes:
     protocol.comment('\nAdd barcodes')
 
-    for barcode_idx in [0, 1, 2]:
+    for barcode_idx in range(min(3, _get_num_cols())):
         col_idxs = [idx + 1 for idx in range(barcode_idx, _get_num_cols(), 3)]
 
         _distribute_barcodes(p10_multi, reag_plt, dst_plt, col_idxs,
