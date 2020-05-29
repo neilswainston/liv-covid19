@@ -190,9 +190,10 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
             disposal_volume=0)
 
     # PCR:
-    protocol.pause('''
+    if len(dst_plts) > 1:
+        protocol.pause('''
         Move %s to external PCR machine and run PCR protocol.
-    ''' % dst_plts[1])
+        ''' % dst_plts[1])
 
     protocol.comment('\nPerform PCR')
     _do_pcr(therm_mod)
