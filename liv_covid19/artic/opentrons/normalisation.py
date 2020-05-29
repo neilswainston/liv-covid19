@@ -31,6 +31,8 @@ _SAMPLE_PLATE_LAST = 'H12'
 
 _DNA_VOLS = {'A1': 3, 'H12': 1}
 
+_TEMP_DECK = 'tempdeck'
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -49,7 +51,7 @@ def _setup(protocol):
     therm_mod.set_block_temperature(4)
     therm_mod.set_lid_temperature(105)
 
-    temp_deck = protocol.load_module('tempdeck', 4)
+    temp_deck = protocol.load_module(_TEMP_DECK, 4)
     temp_deck.set_temperature(4)
 
     # Setup tip racks:

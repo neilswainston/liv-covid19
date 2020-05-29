@@ -23,6 +23,8 @@ _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
 _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}
 
+_TEMP_DECK = 'tempdeck'
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -41,7 +43,7 @@ def _setup(protocol):
     # therm_mod.set_block_temperature(4)
     # therm_mod.set_lid_temperature(105)
 
-    temp_deck = protocol.load_module('tempdeck', 4)
+    temp_deck = protocol.load_module(_TEMP_DECK, 4)
     temp_deck.set_temperature(4)
 
     # Setup tip racks:

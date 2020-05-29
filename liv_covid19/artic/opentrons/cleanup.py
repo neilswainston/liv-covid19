@@ -38,6 +38,8 @@ _MAG_PLATE = {
     'type': '4titude_96_wellplate_200ul'
 }
 
+_TEMP_DECK = 'tempdeck'
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -59,7 +61,7 @@ def _setup(protocol):
     therm_mod.set_block_temperature(4)
     therm_mod.set_lid_temperature(105)
 
-    temp_deck = protocol.load_module('tempdeck', 4)
+    temp_deck = protocol.load_module(_TEMP_DECK, 4)
     temp_deck.set_temperature(4)
 
     mag_deck = protocol.load_module('magdeck', 1)
