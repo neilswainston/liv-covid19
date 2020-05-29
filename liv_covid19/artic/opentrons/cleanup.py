@@ -16,9 +16,8 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.1',
-            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
-            'description': 'simple'}
+metadata = {'apiLevel': '2.3',
+            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
     'type': '4titude_96_wellplate_2200ul',
@@ -249,7 +248,7 @@ def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
                                     hold_time_seconds=seconds)
 
 
-def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return',
+def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate=None,
               air_gap=0):
     '''Move to waste.'''
     _, waste = _get_plate_well(waste_plt, dest)
@@ -257,7 +256,7 @@ def _to_waste(p300_multi, src_plt, waste_plt, vol, dest, tip_fate='return',
     tip = p300_multi.starting_tip
 
     for col_idx in range(_get_num_cols()):
-        p300_multi.pick_up_tip()
+        p300_multi.pick_up_tip(tip)
 
         max_vol = p300_multi._last_tip_picked_up_from.max_volume - air_gap
 
@@ -316,7 +315,14 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, disposal_volume=0)
+
+        if not pipette.hw_pipette['has_tip']:
+            pipette.pick_up_tip()
+
+        pipette.aspirate(vol, src[0])
+        pipette.dispense(vol, dst[0])
+        pipette.mix(3, vol)
+        pipette.drop_tip()
 
 
 def _distribute_reagent(pipette, reag_plt,
@@ -363,6 +369,7 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+    # else retain for reuse
 
 
 def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,

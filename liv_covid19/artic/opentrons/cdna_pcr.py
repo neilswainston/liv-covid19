@@ -16,9 +16,8 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.1',
-            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
-            'description': 'simple'}
+metadata = {'apiLevel': '2.3',
+            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
     'type': '4titude_96_wellplate_1000ul',
@@ -110,7 +109,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
                         'primer_mix', 13.0 - rna_vol,
-                        tip_fate='return')
+                        tip_fate=None)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
@@ -236,7 +235,14 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
+
+        if not pipette.hw_pipette['has_tip']:
+            pipette.pick_up_tip()
+
+        pipette.aspirate(vol, src[0])
+        pipette.dispense(vol, dst[0])
+        pipette.mix(3, vol)
+        pipette.drop_tip()
 
 
 def _distribute_reagent(pipette, reag_plt,
@@ -283,6 +289,7 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+    # else retain for reuse
 
 
 def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,

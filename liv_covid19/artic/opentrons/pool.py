@@ -16,9 +16,8 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.1',
-            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
-            'description': 'simple'}
+metadata = {'apiLevel': '2.3',
+            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
@@ -197,6 +196,7 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+    # else retain for reuse
 
 
 def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,
@@ -233,16 +233,6 @@ def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,
         # Blow-out:
         if blow_out:
             pipette.blow_out()
-
-
-def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
-    '''Transfer samples.'''
-    num_cols = _get_num_cols()
-
-    for src, dst in zip(
-            src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
-            dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):

@@ -16,9 +16,8 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.1',
-            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
-            'description': 'simple'}
+metadata = {'apiLevel': '2.3',
+            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
     'type': '4titude_96_wellplate_200ul',
@@ -104,7 +103,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
                         'water', 6.0,
-                        tip_fate='return')
+                        tip_fate=None)
 
     # Add barcodes:
     protocol.comment('\nAdd barcodes')
@@ -154,16 +153,12 @@ def _barcode_pool(protocol, p300_multi, src_plt, dst_plt):
         p300_multi.pick_up_tip(p300_multi.tip_racks[0].wells()[-1 - idx],
                                presses=1, increment=0)
 
-        print(p300_multi._ctx._location_cache)
-
         for col in src_plt.columns()[col_idx:col_idx + 3]:
             for well in col:
                 # z corresponds to mm above the well bottom:
                 p300_multi.aspirate(vol, well.bottom(z=0))
-                print(p300_multi._ctx._location_cache)
 
             p300_multi.dispense(vol * len(col), dst_plt.wells()[idx])
-            print(p300_multi._ctx._location_cache)
 
         p300_multi.drop_tip()
 
@@ -185,12 +180,20 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
     for src, dst in zip(
             src_plt.columns()[src_col - 1:src_col - 1 + num_cols],
             dst_plt.columns()[dst_col - 1:dst_col - 1 + num_cols]):
-        pipette.transfer(vol, src, dst, mix_after=(3, vol), disposal_volume=0)
+
+        if not pipette.hw_pipette['has_tip']:
+            pipette.pick_up_tip()
+
+        pipette.aspirate(vol, src[0])
+        pipette.dispense(vol, dst[0])
+        pipette.mix(3, vol)
+        pipette.drop_tip()
 
 
 def _distribute_barcodes(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
     '''Distribute barcodes.'''
-    pipette.pick_up_tip()
+    if not pipette.hw_pipette['has_tip']:
+        pipette.pick_up_tip()
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
@@ -250,6 +253,7 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+    # else retain for reuse
 
 
 def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,

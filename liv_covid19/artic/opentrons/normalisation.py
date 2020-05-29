@@ -16,9 +16,8 @@ import os.path
 from opentrons import simulate
 
 
-metadata = {'apiLevel': '2.1',
-            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>',
-            'description': 'simple'}
+metadata = {'apiLevel': '2.3',
+            'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
     'type': 'nest_12_reservoir_15ml',
@@ -161,6 +160,7 @@ def _distribute_reagent(pipette, reag_plt,
         pipette.drop_tip()
     elif tip_fate == 'return':
         pipette.return_tip()
+    # else retain for reuse
 
 
 def _distribute(pipette, asp_pos, disp_pos, vol, air_gap, mix_before,
