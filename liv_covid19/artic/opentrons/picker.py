@@ -29,6 +29,11 @@ _VOLS = {
     'RNA': 30.0
 }
 
+# Scale volumes:
+_VOL_SCALE = 1.0
+
+_VOLS = {key: vol * _VOL_SCALE for key, vol in _VOLS.items()}
+
 
 def run(protocol):
     '''Run protocol.'''
