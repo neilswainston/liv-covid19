@@ -220,13 +220,11 @@ def _do_pcr(therm_mod):
 
     profile = [
         {'temperature': 98, 'hold_time_seconds': 15},
-        {'temperature': 65, 'hold_time_minutes': 5}
+        {'temperature': 63, 'hold_time_minutes': 5}
     ]
 
     therm_mod.execute_profile(steps=profile, repetitions=31,
                               block_max_volume=25)
-
-    # therm_mod.open_lid()
 
 
 def _incubate(therm_mod, block_temp, minutes, seconds=0, lid_temp=None):
