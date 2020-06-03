@@ -114,6 +114,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
                         'primer_mix', _VOLS['primer_mix'],
+                        disp_bottom=0.5,
                         tip_fate=None)
 
     # Add RNA samples:
