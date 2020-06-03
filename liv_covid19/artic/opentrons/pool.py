@@ -20,7 +20,7 @@ metadata = {'apiLevel': '2.3',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
-    'type': 'nest_12_reservoir_15ml',
+    'type': '4titude_96_wellplate_200ul',
     'components': {'water': 'A5',
                    'endprep_mastermix': 'A6'}
 }

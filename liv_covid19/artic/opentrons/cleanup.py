@@ -20,7 +20,7 @@ metadata = {'apiLevel': '2.3',
             'author': 'Neil Swainston <neil.swainston@liverpool.ac.uk>'}
 
 _REAGENT_PLATE = {
-    'type': '4titude_96_wellplate_2200ul',
+    'type': '4titude_96_wellplate_200ul',
     'components': {'beads': 'A5',
                    'ethanol_1': 'A6',
                    'ethanol_2': 'A7',
