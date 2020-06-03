@@ -1,7 +1,11 @@
 livCovApp.controller("livCovCtrl", ["LivCovService", function(LivCovService) {
 	var self = this;
 
-	self.query = {"target_mass": 50.0};
+	self.query = {
+			"target_mass": 50.0,
+			"temp_deck": "Temperature Module",
+			"vol_scale": 0.5
+	};
 	
 	self.setApp = function(app) {
 		self.query.app = app;

@@ -28,6 +28,7 @@ class OpentronsThread(JobThread):
             fle.write(query['file_content'])
 
         self.__temp_deck = query['temp_deck']
+        self.__vol_scale = float(query['vol_scale'])
 
         self.__out_dir = out_dir
         JobThread.__init__(self, query, 1)
@@ -42,6 +43,7 @@ class OpentronsThread(JobThread):
 
             opentrons.run(in_filename=self.__in_filename,
                           temp_deck=self.__temp_deck,
+                          vol_scale=self.__vol_scale,
                           out_dir=parent_dir)
 
             iteration += 1

@@ -8,15 +8,15 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 @author: neilswainston
 '''
 # pylint: disable=invalid-name
+# pylint: disable=too-many-arguments
 import datetime
 import os.path
-import sys
 import uuid
 
 import pandas as pd
 
 
-def run(in_filename, temp_deck, out_dir):
+def run(in_filename, temp_deck, vol_scale, out_dir):
     '''run.'''
     df = pd.read_csv(in_filename, dtype={'id': object, 'plate_id': object})
 
@@ -49,7 +49,7 @@ def run(in_filename, temp_deck, out_dir):
             'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'normalisation.py',
             'picker.py', 'pool.py']:
         _replace(os.path.join('liv_covid19/artic/opentrons/', filename),
-                 out_dir, rna_plate_wells, last_well, temp_deck)
+                 out_dir, rna_plate_wells, last_well, temp_deck, vol_scale)
 
 
 def _get_wells(df):
@@ -67,7 +67,8 @@ def get_well_pos(idx, shape=(8, 12)):
     return row + str(col)
 
 
-def _replace(flnme_in, out_dir, rna_plate_wells, last_well, temp_deck):
+def _replace(flnme_in, out_dir, rna_plate_wells, last_well, temp_deck,
+             vol_scale):
     '''Replace.'''
     flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
 
@@ -82,13 +83,7 @@ def _replace(flnme_in, out_dir, rna_plate_wells, last_well, temp_deck):
             line = '_TEMP_DECK = \'%s\'' % temp_deck \
                 if line.startswith('_TEMP_DECK') else line
 
+            line = '_VOL_SCALE = %f' % vol_scale \
+                if line.startswith('_VOL_SCALE') else line
+
             file_out.write(line)
-
-
-def main(args):
-    '''main method.'''
-    run(args[0], args[1], args[2])
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
