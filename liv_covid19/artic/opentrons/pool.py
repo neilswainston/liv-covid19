@@ -31,6 +31,13 @@ _SAMPLE_PLATE_LAST = 'H12'
 
 _TEMP_DECK = 'tempdeck'
 
+_VOLS = {
+    'water': 45.0,
+    'endprep_mastermix': 10.0,
+    'pool': 5.0,
+    'PCR': 5.0
+}
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -97,7 +104,7 @@ def _pool(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
     protocol.comment('\nAdd water')
     _distribute_reagent(p300_multi, reag_plt,
                         [dest_plt], 1, _get_num_cols(),
-                        'water', 45, tip_fate='retain')
+                        'water', _VOLS['water'], tip_fate='retain')
 
     # Add endprep mastermix:
     protocol.comment('\nAdd endprep mastermix')
@@ -107,7 +114,7 @@ def _pool(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plts,
 
     _distribute_reagent(p300_multi, reag_plt,
                         [therm_plt], 1, _get_num_cols(),
-                        'endprep_mastermix', 10)
+                        'endprep_mastermix', _VOLS['endprep_mastermix'])
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)
@@ -137,13 +144,15 @@ def _combine(p10_multi, src_plts, dst_plt, therm_plt):
             dst_well = dst_plt.columns()[
                 col_idx + (src_plt_idx * 6)][0]
             p10_multi.pick_up_tip()
-            p10_multi.aspirate(2.5, src_plt.columns()[col_idx][0])
-            p10_multi.aspirate(2.5, src_plt.columns()[col_idx + 6][0])
-            p10_multi.dispense(5.0, dst_well)
+            p10_multi.aspirate(_VOLS['pool'] / 2,
+                               src_plt.columns()[col_idx][0])
+            p10_multi.aspirate(_VOLS['pool'] / 2,
+                               src_plt.columns()[col_idx + 6][0])
+            p10_multi.dispense(_VOLS['pool'], dst_well)
             p10_multi.mix(3, 10.0)
 
             # Transfer to PCR_normal plate on thermocycler:
-            p10_multi.transfer(5.0,
+            p10_multi.transfer(_VOLS['PCR'],
                                dst_well,
                                therm_plt.columns()[
                                    col_idx + (src_plt_idx * 6)][0],

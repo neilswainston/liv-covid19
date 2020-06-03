@@ -31,9 +31,13 @@ _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
 _SAMPLE_PLATE_LAST = 'H12'
 
-_RNA_VOL = 10.0
-
 _TEMP_DECK = 'tempdeck'
+
+_VOLS = {
+    'primer_mix': 3.0,
+    'RNA': 10.0,
+    'rt_reaction_mix': 7.0
+}
 
 
 def run(protocol):
@@ -43,8 +47,7 @@ def run(protocol):
         dst_plts = _setup(protocol)
 
     # cDNA:
-    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plts[0],
-          _RNA_VOL)
+    _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plts[0])
 
     # PCR:
     protocol.pause('''
@@ -102,7 +105,7 @@ def _setup(protocol):
         dst_plts
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     '''Generate cDNA.'''
     protocol.comment('\nGenerate cDNA')
 
@@ -110,12 +113,12 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
     protocol.comment('\nAdd primer mix')
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
-                        'primer_mix', 13.0 - rna_vol,
+                        'primer_mix', _VOLS['primer_mix'],
                         tip_fate=None)
 
     # Add RNA samples:
     protocol.comment('\nAdd RNA samples')
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, rna_vol)
+    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, _VOLS['RNA'])
 
     # Incubate at 65C for 5 minute:
     therm_mod.close_lid()
@@ -133,7 +136,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt, rna_vol):
 
     _transfer_reagent(p10_multi, reag_plt,
                       dst_plt, 1,
-                      'rt_reaction_mix', 7.0)
+                      'rt_reaction_mix', _VOLS['rt_reaction_mix'])
 
     _set_flow_rate(protocol, p10_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)

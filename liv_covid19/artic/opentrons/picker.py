@@ -25,6 +25,10 @@ _RNA_PLATE_WELLS = {'plate_1': ['A1', 'B1'], 'plate_2': ['C5', 'C6']}
 
 _TEMP_DECK = 'tempdeck'
 
+_VOLS = {
+    'RNA': 30.0
+}
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -61,7 +65,7 @@ def _setup(protocol):
     return p300_multi, src_plt, dst_plt
 
 
-def _pick(protocol, p300_multi, src_plt, dst_plt, rna_vol=30.0):
+def _pick(protocol, p300_multi, src_plt, dst_plt):
     '''Pick.'''
     # Add RNA samples:
     protocol.comment('\nPick RNA samples')
@@ -78,8 +82,8 @@ def _pick(protocol, p300_multi, src_plt, dst_plt, rna_vol=30.0):
             p300_multi.pick_up_tip(p300_multi.tip_racks[0].wells()[tip_idx],
                                    presses=1, increment=0)
 
-            p300_multi.aspirate(rna_vol, src_plt[src_well])
-            p300_multi.dispense(rna_vol, dst_plt.wells()[dst_well_idx])
+            p300_multi.aspirate(_VOLS['RNA'], src_plt[src_well])
+            p300_multi.dispense(_VOLS['RNA'], dst_plt.wells()[dst_well_idx])
             p300_multi.drop_tip()
             tip_idx -= 1
             dst_well_idx += 1

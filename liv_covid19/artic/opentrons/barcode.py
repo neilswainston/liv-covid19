@@ -38,6 +38,13 @@ _POOL_PLATE = {
 
 _TEMP_DECK = 'tempdeck'
 
+_VOLS = {
+    'water': 6.0,
+    'barcode': 2.5,
+    'cDNA': 1.5,
+    'ligation_mastermix': 10.0
+}
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -104,7 +111,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
 
     _distribute_reagent(p10_multi, reag_plt,
                         [dst_plt], 1, _get_num_cols(),
-                        'water', 6.0,
+                        'water', _VOLS['water'],
                         tip_fate=None)
 
     # Add barcodes:
@@ -114,12 +121,13 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
         col_idxs = [idx + 1 for idx in range(barcode_idx, _get_num_cols(), 3)]
 
         _distribute_barcodes(p10_multi, reag_plt, dst_plt, col_idxs,
-                             'barcodes_%i' % (barcode_idx + 1), 2.5)
+                             'barcodes_%i' % (barcode_idx + 1),
+                             _VOLS['barcode'])
 
     # Add DNA:
     protocol.comment('\nAdd DNA')
 
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, 1.5)
+    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, _VOLS['cDNA'])
 
     # Add ligation mastermix:
     protocol.comment('\nAdd ligation mastermix')
@@ -128,7 +136,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
         _set_flow_rate(protocol, p10_multi, aspirate=3, dispense=5)
 
     _transfer_reagent(p10_multi, reag_plt, dst_plt,
-                      1, 'ligation_mastermix', 10)
+                      1, 'ligation_mastermix', _VOLS['ligation_mastermix'])
 
     _set_flow_rate(protocol, p10_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)

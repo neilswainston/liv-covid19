@@ -40,6 +40,16 @@ _MAG_PLATE = {
 
 _TEMP_DECK = 'tempdeck'
 
+_VOLS = {
+    'beads': 50.0,
+    'pool': 25.0,
+    'supernatant_waste': 120.0,
+    'ethanol': 150.0,
+    'ethanol_waste': 250.0,
+    'water': 20.0,
+    'clean': 15.0
+}
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -106,7 +116,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     p300_multi.starting_tip = tip_racks_200[6].rows_by_name()['A'][2]
 
     _distribute_reagent(p300_multi, reag_plt, [mag_plt], 1, _get_num_cols(),
-                        'beads', 50, mix_before=(5, 150), shake_before=(3, 10))
+                        'beads', _VOLS['beads'], mix_before=(5, 150),
+                        shake_before=(3, 10))
 
     _set_flow_rate(protocol, p300_multi,
                    aspirate=old_aspirate, dispense=old_dispense)
@@ -134,8 +145,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Rack 2:
     p300_multi.starting_tip = tip_racks_200[2].wells()[0]
 
-    _to_waste(p300_multi, mag_plt, reag_plt, 120, tip_fate='return',
-              dest='waste_1')
+    _to_waste(p300_multi, mag_plt, reag_plt, _VOLS['supernatant_waste'],
+              tip_fate='return', dest='waste_1')
 
     # Wash twice with ethanol:
     air_gap = p300_multi.max_volume * 0.1
@@ -149,7 +160,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
         _distribute_reagent(p300_multi, reag_plt, [mag_plt],
                             1, _get_num_cols(),
                             'ethanol_%i' % (count + 1),
-                            150,
+                            _VOLS['ethanol'],
                             air_gap=air_gap,
                             disp_top=0,
                             tip_fate='return' if count == 0 else 'drop',
@@ -162,7 +173,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
         # Rack 2:
         p300_multi.starting_tip = tip_racks_200[2].wells()[0]
 
-        _to_waste(p300_multi, mag_plt, reag_plt, 250,
+        _to_waste(p300_multi, mag_plt, reag_plt, _VOLS['ethanol_waste'],
                   tip_fate='return' if count == 0 else 'drop',
                   dest='waste_%i' % (count + 2),
                   air_gap=air_gap)
@@ -179,8 +190,8 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Rack 3:
     p300_multi.starting_tip = tip_racks_200[3].wells()[0]
 
-    _transfer_reagent(p300_multi, reag_plt, mag_plt, 1, 'water', 20,
-                      mix_after=(10, 20))
+    _transfer_reagent(p300_multi, reag_plt, mag_plt, 1, 'water',
+                      _VOLS['water'], mix_after=(10, 20))
 
     # Incubate:
     protocol.delay(minutes=2)
@@ -210,7 +221,7 @@ def _cleanup(protocol, temp_deck, mag_deck, p300_multi, tip_racks_200,
     # Rack 9:
     p300_multi.starting_tip = tip_racks_200[9].wells()[0]
 
-    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 1, 15)
+    _transfer_samples(p300_multi, mag_plt, clean_plt, 1, 1, _VOLS['clean'])
 
     # Disengage MagDeck:
     mag_deck.disengage()
@@ -230,10 +241,10 @@ def _combine(p300_multi, src_plts, dst_plt, asp_bottom=10):
             src_wells = [col[0].bottom(asp_bottom) for col in column_pairs]
 
             p300_multi.consolidate(
-                25,
+                _VOLS['pool'],
                 src_wells,
                 dst_plt.columns()[col_idx + (src_plt_idx * 6)],
-                mix_after=(3, 50.0),
+                mix_after=(3, 2 * _VOLS['pool']),
                 trash=False,
                 disposal_volume=0)
             tip = _next_tip(tip)

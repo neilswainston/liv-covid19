@@ -33,6 +33,11 @@ _DNA_VOLS = {'A1': 3, 'H12': 1}
 
 _TEMP_DECK = 'tempdeck'
 
+_VOLS = {
+    'endprep_mastermix': 7.5,
+    'water_dna': 7.5
+}
+
 
 def run(protocol):
     '''Run protocol.'''
@@ -79,7 +84,7 @@ def _normalise(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
 
     # Add endprep mastermix:
     _distribute_reagent(p10_multi, reag_plt, [dst_plt], 1, _get_num_cols(),
-                        'endprep_mastermix', 7.5)
+                        'endprep_mastermix', _VOLS['endprep_mastermix'])
 
     # Add water and DNA:
     _, reag_well = _get_plate_well(reag_plt, 'water')
@@ -90,10 +95,10 @@ def _normalise(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
         p10_multi.pick_up_tip(p10_multi.tip_racks[-1].wells()[-1 - idx],
                               presses=1, increment=0)
 
-        p10_multi.aspirate(7.5 - vol, reag_plt[reag_well])
+        p10_multi.aspirate(_VOLS['water_dna'] - vol, reag_plt[reag_well])
         p10_multi.aspirate(vol, src_plt[well])
-        p10_multi.dispense(7.5, dst_plt[well])
-        p10_multi.mix(3, 7.5)
+        p10_multi.dispense(_VOLS['water_dna'], dst_plt[well])
+        p10_multi.mix(3, _VOLS['water_dna'])
 
         p10_multi.drop_tip()
 
