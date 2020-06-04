@@ -122,13 +122,13 @@
         ]
     ],
     "brand": {
-        "brand": "4ti",
+        "brand": "4titude",
         "brandId": [
             "4ti-0116"
         ]
     },
     "metadata": {
-        "displayName": "4ti 96 Well Plate 350 µL",
+        "displayName": "4titude 96 Well Plate 350 µL",
         "displayCategory": "wellPlate",
         "displayVolumeUnits": "µL",
         "tags": []
@@ -1007,12 +1007,12 @@
     "groups": [
         {
             "metadata": {
-                "displayName": "4ti 96 Well Plate 350 µL",
+                "displayName": "4titude 96 Well Plate 350 µL",
                 "displayCategory": "wellPlate",
                 "wellBottomShape": "u"
             },
             "brand": {
-                "brand": "4ti",
+                "brand": "4titude",
                 "brandId": [
                     "4ti-0116"
                 ]
