@@ -171,13 +171,13 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
 
     # Add Pool A:
     _distribute_reagent(p300_multi, reag_plt,
-                        dst_plts, 1, int(_get_num_cols() + 1 / 2),
+                        dst_plts, 1, (_get_num_cols() + 1) // 2,
                         'primer_pool_a_mastermix', 25.0 - cdna_vol,
                         asp_bottom=1.5, disp_bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt,
-                        dst_plts, 7, int(_get_num_cols() + 1 / 2),
+                        dst_plts, 7, (_get_num_cols() + 1) // 2,
                         'primer_pool_b_mastermix', 25.0 - cdna_vol,
                         asp_bottom=1.5, disp_bottom=1.5)
 
