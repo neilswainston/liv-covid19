@@ -116,7 +116,7 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     protocol.comment('\nAdd water')
 
     _distribute_reagent(p10_multi, reag_plt,
-                        [dst_plt], 1, _get_num_cols(),
+                        dst_plt.columns()[:_get_num_cols()],
                         'water', _VOLS['water'],
                         tip_fate=None)
 
@@ -225,8 +225,7 @@ def _distribute_barcodes(pipette, reag_plt, dst_plt, dst_cols, reagent, vol):
     pipette.drop_tip()
 
 
-def _distribute_reagent(pipette, reag_plt,
-                        dst_plts, dst_col_start, dst_col_num,
+def _distribute_reagent(pipette, reag_plt, dest_cols,
                         reagent, vol,
                         tip_fate='drop',
                         mix_before=None,
@@ -241,12 +240,6 @@ def _distribute_reagent(pipette, reag_plt,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = []
-
-    for dst_plt in dst_plts:
-        dest_cols.extend(dst_plt.rows_by_name()['A'][
-            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
-
     asp_well = reag_plt.wells_by_name()[reag_well]
 
     _distribute(pipette,
@@ -254,11 +247,11 @@ def _distribute_reagent(pipette, reag_plt,
                 else (asp_well.bottom(asp_bottom)
                       if asp_bottom is not None
                       else asp_well),
-                [well.top(disp_top) if disp_top is not None
-                 else (well.bottom(disp_bottom)
+                [dest_col[0].top(disp_top) if disp_top is not None
+                 else (dest_col[0].bottom(disp_bottom)
                        if disp_bottom is not None
-                       else well)
-                 for well in dest_cols],
+                       else dest_col[0])
+                 for dest_col in dest_cols],
                 vol,
                 air_gap,
                 mix_before,

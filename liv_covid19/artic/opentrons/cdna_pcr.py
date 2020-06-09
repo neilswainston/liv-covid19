@@ -29,7 +29,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
-_SAMPLE_PLATE_LAST = 'H7'
+_SAMPLE_PLATE_LAST = 'H12'
 
 _TEMP_DECK = 'tempdeck'
 
