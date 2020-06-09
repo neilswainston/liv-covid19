@@ -36,7 +36,9 @@ _TEMP_DECK = 'tempdeck'
 _VOLS = {
     'primer_mix': 3.0,
     'RNA': 10.0,
-    'rt_reaction_mix': 7.0
+    'rt_reaction_mix': 7.0,
+    'primer_pool_mastermix': 25.0,
+    'cDNA': 5.0
 }
 
 # Scale volumes:
@@ -179,13 +181,15 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
 
     _distribute_reagent(p300_multi, reag_plt,
                         a_cols[:_get_num_cols()],
-                        'primer_pool_a_mastermix', 25.0 - cdna_vol,
+                        'primer_pool_a_mastermix',
+                        _VOLS['primer_pool_mastermix'] - _VOLS['cDNA'],
                         asp_bottom=1.5, disp_bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt,
                         b_cols[:_get_num_cols()],
-                        'primer_pool_b_mastermix', 25.0 - cdna_vol,
+                        'primer_pool_b_mastermix',
+                        _VOLS['primer_pool_mastermix'] - _VOLS['cDNA'],
                         asp_bottom=1.5, disp_bottom=1.5)
 
     _set_flow_rate(protocol, p300_multi, aspirate=prev_aspirate)
@@ -203,7 +207,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
             cdna_vol,
             src_plt.columns()[col_idx],
             dst_cols,
-            mix_after=(3, 2.5),
+            mix_after=(3, _VOLS['cDNA']),
             disposal_volume=0)
 
     # PCR:
