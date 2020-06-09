@@ -29,7 +29,7 @@ _REAGENT_PLATE = {
 
 _SAMPLE_PLATE_TYPE = '4titude_96_wellplate_200ul'
 
-_SAMPLE_PLATE_LAST = 'H12'
+_SAMPLE_PLATE_LAST = 'H7'
 
 _TEMP_DECK = 'tempdeck'
 
@@ -117,7 +117,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     # Add primer mix:
     protocol.comment('\nAdd primer mix')
     _distribute_reagent(p10_multi, reag_plt,
-                        [dst_plt], 1, _get_num_cols(),
+                        dst_plt.columns()[:_get_num_cols()],
                         'primer_mix', _VOLS['primer_mix'],
                         disp_bottom=0.5,
                         tip_fate=None)
@@ -170,14 +170,21 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     prev_aspirate, _, _ = _set_flow_rate(protocol, p300_multi, aspirate=50)
 
     # Add Pool A:
+    a_cols = []
+    b_cols = []
+
+    for dst_plt in dst_plts:
+        a_cols.extend(dst_plt.columns()[:6])
+        b_cols.extend(dst_plt.columns()[6:])
+
     _distribute_reagent(p300_multi, reag_plt,
-                        dst_plts, 1, (_get_num_cols() + 1) // 2,
+                        a_cols[:_get_num_cols()],
                         'primer_pool_a_mastermix', 25.0 - cdna_vol,
                         asp_bottom=1.5, disp_bottom=1.5)
 
     # Add Pool B:
     _distribute_reagent(p300_multi, reag_plt,
-                        dst_plts, 7, (_get_num_cols() + 1) // 2,
+                        b_cols[:_get_num_cols()],
                         'primer_pool_b_mastermix', 25.0 - cdna_vol,
                         asp_bottom=1.5, disp_bottom=1.5)
 
@@ -254,8 +261,7 @@ def _transfer_samples(pipette, src_plt, dst_plt, src_col, dst_col, vol):
         pipette.drop_tip()
 
 
-def _distribute_reagent(pipette, reag_plt,
-                        dst_plts, dst_col_start, dst_col_num,
+def _distribute_reagent(pipette, reag_plt, dest_cols,
                         reagent, vol,
                         tip_fate='drop',
                         mix_before=None,
@@ -270,12 +276,6 @@ def _distribute_reagent(pipette, reag_plt,
 
     _, reag_well = _get_plate_well(reag_plt, reagent)
 
-    dest_cols = []
-
-    for dst_plt in dst_plts:
-        dest_cols.extend(dst_plt.rows_by_name()['A'][
-            dst_col_start - 1:dst_col_start - 1 + dst_col_num])
-
     asp_well = reag_plt.wells_by_name()[reag_well]
 
     _distribute(pipette,
@@ -283,11 +283,11 @@ def _distribute_reagent(pipette, reag_plt,
                 else (asp_well.bottom(asp_bottom)
                       if asp_bottom is not None
                       else asp_well),
-                [well.top(disp_top) if disp_top is not None
-                 else (well.bottom(disp_bottom)
+                [dest_col[0].top(disp_top) if disp_top is not None
+                 else (dest_col[0].bottom(disp_bottom)
                        if disp_bottom is not None
-                       else well)
-                 for well in dest_cols],
+                       else dest_col[0])
+                 for dest_col in dest_cols],
                 vol,
                 air_gap,
                 mix_before,
