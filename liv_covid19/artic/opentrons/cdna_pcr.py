@@ -71,7 +71,7 @@ def run(protocol):
          dst_plts)
 
 
-def _setup(protocol):
+def _setup(protocol, use_temp_deck=False):
     '''Setup.'''
     # Add temp deck:
     therm_mod = protocol.load_module('thermocycler', 7)
@@ -80,7 +80,9 @@ def _setup(protocol):
     therm_mod.set_lid_temperature(105)
 
     temp_deck = protocol.load_module(_TEMP_DECK, 4)
-    temp_deck.set_temperature(6)
+
+    if use_temp_deck:
+        temp_deck.set_temperature(6)
 
     # Setup tip racks:
     tip_racks_10 = \
@@ -112,29 +114,41 @@ def _setup(protocol):
         dst_plts
 
 
-def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
+def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
+          transfer_samples=False):
     '''Generate cDNA.'''
     protocol.comment('\nGenerate cDNA')
 
-    # Add primer mix:
-    protocol.comment('\nAdd primer mix')
-    _distribute_reagent(p10_multi, reag_plt,
-                        dst_plt.columns()[:_get_num_cols()],
-                        'primer_mix', _VOLS['primer_mix'],
-                        disp_bottom=0.5,
-                        tip_fate=None)
+    if transfer_samples:
+        # Add primer mix:
+        protocol.comment('\nAdd primer mix')
 
-    # Add RNA samples:
-    protocol.comment('\nAdd RNA samples')
-    _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, _VOLS['RNA'])
+        _distribute_reagent(p10_multi, reag_plt,
+                            dst_plt.columns()[:_get_num_cols()],
+                            'primer_mix', _VOLS['primer_mix'],
+                            disp_bottom=0.5,
+                            tip_fate=None)
 
-    # Incubate at 65C for 5 minute:
-    therm_mod.close_lid()
-    _incubate(therm_mod, 65, 5, lid_temp=105)
+        # Add RNA samples:
+        protocol.comment('\nAdd RNA samples')
+        _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, _VOLS['RNA'])
 
-    # Incubate (on ice) / at min temp for 1 minute:
-    _incubate(therm_mod, 4, 1)
-    therm_mod.open_lid()
+        # Incubate at 65C for 5 minute:
+        therm_mod.close_lid()
+        _incubate(therm_mod, 65, 5, lid_temp=105)
+
+        # Incubate (on ice) / at min temp for 1 minute:
+        _incubate(therm_mod, 4, 1)
+        therm_mod.open_lid()
+
+    else:
+        mix_vol = min(_VOLS['primer_mix'] + _VOLS['RNA'],
+                      p10_multi.max_volume)
+
+        _transfer_reagent(p10_multi, reag_plt,
+                          dst_plt, 1,
+                          'primer_mix', _VOLS['primer_mix'],
+                          mix_after=(3, mix_vol))
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
