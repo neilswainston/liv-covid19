@@ -9,10 +9,12 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 '''
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
+# pylint: disable=wrong-import-order
 import datetime
 import os.path
 import uuid
 
+from liv_covid19.web.artic import utils
 import pandas as pd
 
 
@@ -46,10 +48,10 @@ def run(in_filename, temp_deck, vol_scale, out_dir):
         for key, grp_df in df[df['status'] != 'NEG'].groupby('plate_id')}
 
     for filename in [
-            'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'normalisation.py',
-            'picker.py', 'pool.py']:
-        _replace(os.path.join('liv_covid19/artic/opentrons/', filename),
-                 out_dir, rna_plate_wells, last_well, temp_deck, vol_scale)
+            'barcode.py', 'cdna_pcr.py', 'cleanup.py', 'picker.py', 'pool.py']:
+        utils.replace(os.path.join('liv_covid19/artic/opentrons/', filename),
+                      out_dir, rna_plate_wells, last_well, temp_deck,
+                      vol_scale)
 
 
 def _get_wells(df):
@@ -65,25 +67,3 @@ def get_well_pos(idx, shape=(8, 12)):
     col = idx // shape[0] + 1
 
     return row + str(col)
-
-
-def _replace(flnme_in, out_dir, rna_plate_wells, last_well, temp_deck,
-             vol_scale):
-    '''Replace.'''
-    flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
-
-    with open(flnme_in, 'rt') as file_in, open(flnme_out, 'wt') as file_out:
-        for line in file_in:
-            line = '_SAMPLE_PLATE_LAST = \'%s\'' % last_well \
-                if line.startswith('_SAMPLE_PLATE_LAST') else line
-
-            line = '_RNA_PLATE_WELLS = %s' % rna_plate_wells \
-                if line.startswith('_RNA_PLATE_WELLS') else line
-
-            line = '_TEMP_DECK = \'%s\'' % temp_deck \
-                if line.startswith('_TEMP_DECK') else line
-
-            line = '_VOL_SCALE = %f' % vol_scale \
-                if line.startswith('_VOL_SCALE') else line
-
-            file_out.write(line)

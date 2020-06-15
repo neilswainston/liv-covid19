@@ -8,14 +8,15 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>..
 @author: neilswainston
 '''
 # pylint: disable=invalid-name
+# pylint: disable=wrong-import-order
 import os.path
-import sys
 
+from liv_covid19.web.artic import utils
 import numpy as np
 import pandas as pd
 
 
-def run(in_filename, out_dir, target_mass=50):
+def run(in_filename, out_dir, target_mass, temp_deck):
     '''run.'''
     in_df = _get_data(in_filename)
 
@@ -45,7 +46,7 @@ def run(in_filename, out_dir, target_mass=50):
                        index=False)
 
     # Write Opentrons worklist:
-    _get_ot(tab_df, out_dir)
+    _get_ot(tab_df, temp_deck, out_dir)
 
 
 def _get_data(in_filename):
@@ -111,7 +112,7 @@ def _get_mosquito(tab_df, max_vol=12000):
     return df
 
 
-def _get_ot(df, out_dir):
+def _get_ot(df, temp_deck, out_dir):
     '''Get OpenTrons worklists.'''
     resp = df.apply(_to_tuple, axis=1)
     dna_concs = dict(resp.tolist())
@@ -120,31 +121,12 @@ def _get_ot(df, out_dir):
     py_dir = 'liv_covid19/artic/opentrons/'
 
     for filename in ['normalisation.py']:
-        _replace(os.path.join(py_dir, filename), out_dir, dna_concs)
-
-
-def _replace(flnme_in, out_dir, dna_concs):
-    '''Replace.'''
-    flnme_out = os.path.join(out_dir, os.path.basename(flnme_in))
-
-    with open(flnme_in, 'rt') as file_in, open(flnme_out, 'wt') as file_out:
-        for line in file_in:
-            line = '_DNA_VOLS = %s' % dna_concs \
-                if line.startswith('_DNA_VOLS') else line
-
-            file_out.write(line)
+        utils.replace(os.path.join(py_dir, filename), out_dir,
+                      temp_deck=temp_deck,
+                      dna_concs=dna_concs)
 
 
 def _to_tuple(row):
     '''Convert row to tuple.'''
     well = chr(int(row['Row']) - 1 + ord('A')) + str(int(row['Column']))
     return (well, row['conc'])
-
-
-def main(args):
-    '''main method.'''
-    run(args[0], args[1], float(args[2]))
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
