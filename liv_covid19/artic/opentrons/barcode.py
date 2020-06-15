@@ -147,12 +147,12 @@ def _barcode(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt):
     _set_flow_rate(protocol, p10_multi, aspirate=prev_aspirate,
                    dispense=prev_dispense)
 
-    # Incubate at 20C for 5 minute:
+    # Incubate at 20C for 20 minute:
     therm_mod.close_lid()
-    _incubate(therm_mod, 20, 5, lid_temp=105)
+    _incubate(therm_mod, 20, 20, lid_temp=105)
 
-    # Incubate at 65C for 5 minute:
-    _incubate(therm_mod, 65, 5, lid_temp=105)
+    # Incubate at 65C for 10 minute:
+    _incubate(therm_mod, 65, 10, lid_temp=105)
 
     therm_mod.set_block_temperature(4)
     therm_mod.open_lid()
