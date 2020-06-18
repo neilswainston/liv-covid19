@@ -57,13 +57,21 @@ def run(protocol):
     _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plts[0])
 
     # PCR:
-    protocol.pause('''
+    message = '''
         Remove %s.
         Move %s to %s.
+        Add new %s to %s.''' % \
+        (src_plt,
+         dst_plts[0], temp_deck.labware.parent._display_name,
+         dst_plts[0].load_name, therm_mod.labware.parent._display_name)
+
+    if len(dst_plts) > 1:
+        message += '''
         Add new %s to %s.
-    ''' % (src_plt,
-           dst_plts[0], temp_deck.labware.parent._display_name,
-           _SAMPLE_PLATE_TYPE, therm_mod.labware.parent._display_name))
+    ''' % (dst_plts[1].load_name, dst_plts[1].parent)
+
+    protocol.pause(message)
+
     src_plt.name = 'cDNA'
     dst_plts[0].name = 'PCR'
 
@@ -132,15 +140,6 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
         # Add RNA samples:
         protocol.comment('\nAdd RNA samples')
         _transfer_samples(p10_multi, src_plt, dst_plt, 1, 1, _VOLS['RNA'])
-
-        # Incubate at 65C for 5 minute:
-        therm_mod.close_lid()
-        _incubate(therm_mod, 65, 5, lid_temp=105)
-
-        # Incubate (on ice) / at min temp for 1 minute:
-        _incubate(therm_mod, 4, 1)
-        therm_mod.open_lid()
-
     else:
         mix_vol = min(_VOLS['primer_mix'] + _VOLS['RNA'],
                       p10_multi.max_volume)
@@ -149,6 +148,14 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
                           dst_plt, 1,
                           'primer_mix', _VOLS['primer_mix'],
                           mix_after=(3, mix_vol))
+
+    # Incubate at 65C for 5 minute:
+    therm_mod.close_lid()
+    _incubate(therm_mod, 65, 5, lid_temp=105)
+
+    # Incubate (on ice) / at min temp for 1 minute:
+    _incubate(therm_mod, 4, 1)
+    therm_mod.open_lid()
 
     # Add RT reaction mix:
     protocol.comment('\nAdd RT reaction mix')
@@ -176,7 +183,7 @@ def _cdna(protocol, therm_mod, p10_multi, reag_plt, src_plt, dst_plt,
 
 
 def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
-         dst_plts, cdna_vol=5.0):
+         dst_plts):
     '''Do PCR.'''
     protocol.comment('\nSetup PCR')
 
@@ -218,7 +225,7 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
                    [dst_plts[plt_idx].columns()[col_idx % 6 + 6]]
 
         p10_multi.distribute(
-            cdna_vol,
+            _VOLS['cDNA'],
             src_plt.columns()[col_idx],
             dst_cols,
             mix_after=(3, _VOLS['cDNA']),
