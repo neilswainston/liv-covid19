@@ -243,6 +243,8 @@ def _pcr(protocol, therm_mod, p10_multi, p300_multi, reag_plt, src_plt,
     # Incubate at 4C for 1 minute:
     _incubate(therm_mod, 4, 1)
 
+    therm_mod.deactivate_lid()
+
 
 def _do_pcr(therm_mod):
     '''Do PCR.'''
