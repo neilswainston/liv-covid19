@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 
-def run(in_filename, out_dir, target_mass, temp_deck):
+def run(in_filename, out_dir, target_mass, vol_scale, temp_deck):
     '''run.'''
     in_df = _get_data(in_filename)
 
@@ -46,7 +46,7 @@ def run(in_filename, out_dir, target_mass, temp_deck):
                        index=False)
 
     # Write Opentrons worklist:
-    _get_ot(tab_df, temp_deck, out_dir)
+    _get_ot(tab_df, temp_deck, vol_scale, out_dir)
 
 
 def _get_data(in_filename):
@@ -112,7 +112,7 @@ def _get_mosquito(tab_df, max_vol=12000):
     return df
 
 
-def _get_ot(df, temp_deck, out_dir):
+def _get_ot(df, temp_deck, vol_scale, out_dir):
     '''Get OpenTrons worklists.'''
     resp = df.apply(_to_tuple, axis=1)
     dna_concs = dict(resp.tolist())
@@ -123,6 +123,7 @@ def _get_ot(df, temp_deck, out_dir):
     for filename in ['normalisation.py']:
         utils.replace(os.path.join(py_dir, filename), out_dir,
                       temp_deck=temp_deck,
+                      vol_scale=vol_scale,
                       dna_concs=dna_concs)
 
 

@@ -30,6 +30,7 @@ class NormaliseThread(JobThread):
         self.__out_dir = out_dir
         self.__target_mass = query['target_mass']
         self.__temp_deck = query['temp_deck']
+        self.__vol_scale = float(query['vol_scale'])
         JobThread.__init__(self, query, 1)
 
     def run(self):
@@ -43,6 +44,7 @@ class NormaliseThread(JobThread):
             normal.run(in_filename=self.__in_filename,
                        out_dir=parent_dir,
                        target_mass=self.__target_mass,
+                       vol_scale=self.__vol_scale,
                        temp_deck=self.__temp_deck)
 
             iteration += 1
