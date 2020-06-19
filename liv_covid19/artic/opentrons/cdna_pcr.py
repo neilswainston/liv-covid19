@@ -257,7 +257,7 @@ def _do_pcr(therm_mod):
         {'temperature': 63, 'hold_time_minutes': 5}
     ]
 
-    therm_mod.execute_profile(steps=profile, repetitions=31,
+    therm_mod.execute_profile(steps=profile, repetitions=35,
                               block_max_volume=25)
 
 
